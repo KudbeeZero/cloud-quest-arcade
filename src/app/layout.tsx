@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Template",
-  description: "A minimal Next.js starter template",
+  title: "Cloud Quest Arcade — AWS Cloud Practitioner Trainer",
+  description:
+    "A retro-flavored practice arcade for the AWS Certified Cloud Practitioner (CLF-C02) exam.",
 };
 
 export default function RootLayout({
