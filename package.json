@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "16.2.6",
+    "next": "16.2.10",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
@@ -22,7 +22,7 @@
     "@tailwindcss/postcss": "^4.1.17",
     "tailwindcss": "^4.1.17",
     "eslint": "^9.39.1",
-    "eslint-config-next": "16.2.6"
+    "eslint-config-next": "16.2.10"
   },
   "engines": {
     "node": ">=22 <23"
