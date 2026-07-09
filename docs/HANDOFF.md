@@ -6,20 +6,22 @@ repository. Read it before assuming anything about the stack or scope.
 ## Current repo status
 
 - **Repo:** `KudbeeZero/cloud-quest-arcade`
-- **Live branch for active work:** `feat/arcade-learning-foundation`
+- **Live branch for active work:** `feat/player-progress-v1`
 - **Package manager:** `pnpm` (lockfile: `pnpm-lock.yaml`; `bun.lock` removed)
 - **State:** Front-end only, fully client-side, no server runtime.
 
-## PR #1 status
+## PR lane status
 
-- **PR:** #1 "feat: create arcade AWS practitioner trainer foundation"
-- **State:** OPEN
-- **Base:** `main` ← **Head:** `feat/arcade-learning-foundation`
-- **Mergeable:** yes (verify with `gh pr view 1` before pushing)
-- **CI:** GitHub Actions added (`.github/workflows/ci.yml`)
-- **Dependabot:** enabled (`.github/dependabot.yml`, weekly, npm, minor/patch grouped)
+- **PR #1** "feat: create arcade AWS practitioner trainer foundation" —
+  **MERGED / deployed** (CQ-001-foundation). App working on `main`.
+- **PR #5** "docs: define deploy gates and branch protection plan" —
+  **MERGED** (CQ-002-deploy-gates), squash-merged 2026-07-09; branch deleted.
+  Docs-only (`docs/DEPLOYMENT_GATES.md`).
+- **Active lane:** CQ-004-player-progress-v1 on branch `feat/player-progress-v1`.
+  The PR-memory-layer docs (CQ-003) ship in the same PR as supporting artifacts.
 
-> All changes for this lane land on PR #1 only. Do NOT open a second PR.
+> Each lane has a Kudbee lane ID and an immutable GitHub PR number. See
+> `docs/PR_MEMORY_LAYER.md` and `docs/PR_LEDGER.md`.
 
 ## Actual stack
 
@@ -73,15 +75,25 @@ Explicitly out of scope — do NOT add:
 - Live AWS API integration
 - Copied official exam content
 
+## Current active lane (CQ-004-player-progress-v1)
+
+Branch `feat/player-progress-v1`. Frontend-only player progress:
+
+- localStorage high scores (best score, best rank, best streak, last session)
+- Session history (last 5 sessions: date, score, accuracy, rank, domain breakdown, missed prompts)
+- Domain progress tracking (per-domain accuracy / mastery)
+- Missed-question review on the results screen
+- Result-screen improvements (score vs best, strengths, weakest domain, CTA)
+- Reset-progress action (confirm before clearing localStorage)
+
 ## Next lanes (ideas, not commitments)
 
 1. **CI / deploy preview** — wire CI to a preview deploy (e.g. Vercel preview).
+   (Plan in `docs/DEPLOYMENT_GATES.md`, CQ-002.)
 2. **Larger question bank** — more original items per domain, difficulty tiers.
 3. **Timed "blitz" mode** — countdown arcade mode with survival scoring.
-4. **Domain progress** — per-domain accuracy and mastery tracking.
-5. **Local high-score persistence** — `localStorage` best score / streak.
-6. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
-7. **Review mode** — revisit questions answered incorrectly.
+4. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
+5. **Badges / achievements** — gamified milestone layer on top of progress.
 
 ## Agent workflow notes
 

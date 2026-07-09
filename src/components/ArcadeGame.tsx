@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import questions from "@/data/questions";
 import type { AnswerOption, AnsweredQuestion, Domain } from "@/lib/types";
 import {
@@ -9,6 +9,16 @@ import {
   rankForAccuracy,
 } from "@/lib/scoring";
 import { now } from "@/lib/clock";
+import {
+  accuracyPct,
+  buildSessionRecord,
+  progressStore,
+  resetProgress,
+  recordSession,
+  setProgressState,
+  type MissedItem,
+  type ProgressState,
+} from "@/lib/progress";
 
 type Phase = "start" | "playing" | "results";
 
@@ -81,6 +91,31 @@ function ProgressBar({
   );
 }
 
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-neutral-800/70 p-3 text-center">
+      <dt className="text-[10px] uppercase tracking-wide text-neutral-400">
+        {label}
+      </dt>
+      <dd className="mt-1 text-lg font-bold text-white">{value}</dd>
+    </div>
+  );
+}
+
+/** Per-domain mastery summary across all recorded sessions. */
+function domainSummary(totals: ProgressState["domainTotals"]) {
+  const explored = DOMAIN_ORDER.filter((d) => totals[d].total > 0);
+  if (explored.length === 0) return { strongest: null, weakest: null };
+
+  let strongest = explored[0];
+  let weakest = explored[0];
+  for (const d of explored) {
+    if (accuracyPct(totals[d]) > accuracyPct(totals[strongest])) strongest = d;
+    if (accuracyPct(totals[d]) < accuracyPct(totals[weakest])) weakest = d;
+  }
+  return { strongest, weakest };
+}
+
 export default function ArcadeGame() {
   const [phase, setPhase] = useState<Phase>("start");
   const [order, setOrder] = useState<number[]>([]);
@@ -90,7 +125,11 @@ export default function ArcadeGame() {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [questionStart, setQuestionStart] = useState(0);
-  const [bestScore, setBestScore] = useState(0);
+  const progress = useSyncExternalStore(
+    progressStore.subscribe,
+    progressStore.getSnapshot,
+    progressStore.getServerSnapshot,
+  );
 
   const activeQuestion =
     phase === "playing" ? questions[order[current]] : undefined;
@@ -103,16 +142,14 @@ export default function ArcadeGame() {
     [phase, answers],
   );
 
-  const level = Math.floor(bestScore / LEVEL_XP) + 1;
-  const xpIntoLevel = bestScore % LEVEL_XP;
+  const level = Math.floor(progress.bestScore / LEVEL_XP) + 1;
+  const xpIntoLevel = progress.bestScore % LEVEL_XP;
   const xpPct = (xpIntoLevel / LEVEL_XP) * 100;
 
-  const exploredDomains = useMemo(() => {
-    const ids = new Set(answers.map((a) => a.questionId));
-    return new Set(
-      questions.filter((q) => ids.has(q.id)).map((q) => q.domain),
-    );
-  }, [answers]);
+  const { strongest, weakest } = useMemo(
+    () => domainSummary(progress.domainTotals),
+    [progress.domainTotals],
+  );
 
   function startGame() {
     setOrder(shuffle(questions.map((_, i) => i)));
@@ -146,15 +183,31 @@ export default function ArcadeGame() {
     ]);
   }
 
+  function finishRun() {
+    const runResult = computeRunResult(answers, questions.length);
+    const session = buildSessionRecord(answers, questions, runResult, now());
+    setProgressState(recordSession(progress, session));
+    setPhase("results");
+  }
+
   function next() {
     if (current + 1 >= order.length) {
-      setBestScore((b) => Math.max(b, score));
-      setPhase("results");
+      finishRun();
       return;
     }
     setCurrent((c) => c + 1);
     setSelected(null);
     setQuestionStart(now());
+  }
+
+  function handleReset() {
+    if (
+      window.confirm(
+        "Reset all progress? This clears your saved scores, history, and domain mastery on this device.",
+      )
+    ) {
+      setProgressState(resetProgress());
+    }
   }
 
   return (
@@ -184,28 +237,32 @@ export default function ArcadeGame() {
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-300">
-              Domain badges
+              Domain mastery
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-3">
               {DOMAIN_ORDER.map((domain) => {
-                const explored = exploredDomains.has(domain);
+                const stat = progress.domainTotals[domain];
+                const pct = accuracyPct(stat);
+                const explored = stat.total > 0;
                 return (
-                  <div
-                    key={domain}
-                    className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs ${
-                      explored
-                        ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-100"
-                        : "border-white/10 bg-neutral-800/60 text-neutral-300"
-                    }`}
-                    title={domain}
-                  >
-                    <span aria-hidden className="text-base">
-                      {DOMAIN_BADGE[domain]}
-                    </span>
-                    <span className="flex-1 leading-tight">{domain}</span>
-                    <span className="font-semibold text-neutral-400">
-                      {DOMAIN_COUNTS[domain]}
-                    </span>
+                  <div key={domain}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-2 text-neutral-200">
+                        <span aria-hidden className="text-base">
+                          {DOMAIN_BADGE[domain]}
+                        </span>
+                        {domain}
+                      </span>
+                      <span className="text-neutral-400">
+                        {explored ? `${pct}%` : "—"}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800 ring-1 ring-inset ring-white/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-400 transition-all duration-500"
+                        style={{ width: `${explored ? pct : 0}%` }}
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -215,10 +272,10 @@ export default function ArcadeGame() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
               <p className="text-xs uppercase tracking-wide text-neutral-400">
-                Streak
+                Best streak
               </p>
               <p className="mt-1 text-2xl font-black text-amber-300">
-                {streak}
+                {progress.bestStreak}
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
@@ -226,7 +283,7 @@ export default function ArcadeGame() {
                 Best score
               </p>
               <p className="mt-1 text-2xl font-black text-fuchsia-300">
-                {bestScore.toLocaleString()}
+                {progress.bestScore.toLocaleString()}
               </p>
             </div>
           </div>
@@ -236,6 +293,14 @@ export default function ArcadeGame() {
             className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
           >
             ▸ Start Challenge
+          </button>
+
+          <button
+            onClick={handleReset}
+            className="self-center text-xs text-neutral-500 underline-offset-2 transition hover:text-rose-300 hover:underline"
+            type="button"
+          >
+            Reset progress
           </button>
         </section>
       )}
@@ -255,15 +320,76 @@ export default function ArcadeGame() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Stat label="Score" value={result.score.toLocaleString()} />
             <Stat
-              label="Correct"
-              value={`${result.correctCount}/${result.totalQuestions}`}
+              label="Best score"
+              value={progress.bestScore.toLocaleString()}
             />
             <Stat label="Accuracy" value={`${result.accuracy}%`} />
-            <Stat label="Best streak" value={String(result.bestStreak)} />
+            <Stat
+              label="Rank"
+              value={rankForAccuracy(result.accuracy)}
+            />
+            <Stat label="Best rank" value={progress.bestRank} />
+            <Stat label="Best streak" value={String(progress.bestStreak)} />
           </div>
+
+          {(strongest || weakest) && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-300">
+                Domain progress
+              </p>
+              <div className="space-y-2 text-sm">
+                {strongest && (
+                  <p className="flex items-center justify-between">
+                    <span className="text-neutral-300">Strongest</span>
+                    <span className="flex items-center gap-2 font-semibold text-emerald-300">
+                      <span aria-hidden>{DOMAIN_BADGE[strongest]}</span>
+                      {strongest} · {accuracyPct(progress.domainTotals[strongest])}%
+                    </span>
+                  </p>
+                )}
+                {weakest && (
+                  <p className="flex items-center justify-between">
+                    <span className="text-neutral-300">Weakest</span>
+                    <span className="flex items-center gap-2 font-semibold text-rose-300">
+                      <span aria-hidden>{DOMAIN_BADGE[weakest]}</span>
+                      {weakest} · {accuracyPct(progress.domainTotals[weakest])}%
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {progress.lastSession && progress.lastSession.missed.length > 0 && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-rose-300">
+                Review missed ({progress.lastSession.missed.length})
+              </p>
+              <ul className="space-y-3">
+                {progress.lastSession.missed.map((item: MissedItem) => (
+                  <li
+                    key={item.questionId}
+                    className="rounded-xl border border-rose-400/20 bg-rose-500/5 p-3"
+                  >
+                    <p className="flex items-center gap-2 text-xs font-semibold text-neutral-200">
+                      <span aria-hidden>{DOMAIN_BADGE[item.domain]}</span>
+                      {item.domain}
+                    </p>
+                    <p className="mt-1 text-sm text-white">{item.prompt}</p>
+                    <p className="mt-1 text-sm text-emerald-300">
+                      ✓ {item.correctText}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      {item.explanation}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <button
             onClick={startGame}
@@ -373,17 +499,6 @@ export default function ArcadeGame() {
           </span>
         ))}
       </nav>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-neutral-800/70 p-3 text-center">
-      <dt className="text-[10px] uppercase tracking-wide text-neutral-400">
-        {label}
-      </dt>
-      <dd className="mt-1 text-lg font-bold text-white">{value}</dd>
     </div>
   );
 }
