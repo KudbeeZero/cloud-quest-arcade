@@ -1,4 +1,6 @@
-import type { AnsweredQuestion, RunResult } from "./types";
+import type { AnsweredQuestion, Question, RunResult } from "./types";
+
+export type Difficulty = Question["difficulty"];
 
 /** Base points awarded for a correct answer. */
 export const BASE_POINTS = 100;
@@ -13,6 +15,12 @@ export const STREAK_BONUS = 25;
 export const SPEED_BONUS_MAX = 50;
 export const SPEED_BONUS_WINDOW_MS = 10_000;
 
+export const DIFFICULTY_MULTIPLIER: Record<Difficulty, number> = {
+  easy: 1,
+  medium: 1.5,
+  hard: 2,
+};
+
 /**
  * Points for a single answer given the streak *before* this answer.
  * Wrong answers score nothing and break the streak.
@@ -21,6 +29,7 @@ export function pointsForAnswer(
   correct: boolean,
   streakBefore: number,
   elapsedMs: number,
+  difficulty: Difficulty = "easy",
 ): number {
   if (!correct) return 0;
 
@@ -31,13 +40,16 @@ export function pointsForAnswer(
     SPEED_BONUS_MAX * (1 - clampedElapsed / SPEED_BONUS_WINDOW_MS),
   );
 
-  return BASE_POINTS + streakBonus + speedBonus;
+  const multiplier = DIFFICULTY_MULTIPLIER[difficulty] ?? 1;
+  const base = BASE_POINTS + streakBonus + speedBonus;
+  return Math.round(base * multiplier);
 }
 
 /** Aggregate a list of answers into a final RunResult. */
 export function computeRunResult(
   answers: AnsweredQuestion[],
   totalQuestions: number,
+  questions: Question[] = [],
 ): RunResult {
   let score = 0;
   let streak = 0;
@@ -46,7 +58,9 @@ export function computeRunResult(
 
   for (const answer of answers) {
     if (answer.correct) {
-      score += pointsForAnswer(true, streak, answer.elapsedMs);
+      const question = questions.find((q) => q.id === answer.questionId);
+      const difficulty = question?.difficulty ?? "easy";
+      score += pointsForAnswer(true, streak, answer.elapsedMs, difficulty);
       streak += 1;
       bestStreak = Math.max(bestStreak, streak);
       correctCount += 1;

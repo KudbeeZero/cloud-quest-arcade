@@ -1,10 +1,10 @@
-# Active Context: Next.js Starter Template
+# Active Context: Cloud Quest Arcade
 
 ## Current State
 
 **Template Status**: ✅ Ready for development
 
-The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. It's ready for AI-assisted expansion to build any type of application.
+The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02) practice quiz app branded as a retro "arcade." It is fully client-side with no backend or database.
 
 ## Recently Completed
 
@@ -14,59 +14,33 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] ESLint configuration
 - [x] Memory bank documentation
 - [x] Recipe system for common features
+- [x] Original 12-question starter bank
+- [x] Expanded to 40 original questions (10 per domain) with easy/medium/hard tiers
+- [x] Difficulty-aware scoring multipliers (1x / 1.5x / 2x)
+- [x] Difficulty filter on start screen and difficulty breakdown on results
+- [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
+- [x] localStorage persistence for bestScore/XP across sessions
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
 | `src/app/page.tsx` | Home page | ✅ Ready |
+| `src/app/admin/page.tsx` | Client-side admin console | ✅ Ready |
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
+| `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Ready |
+| `src/data/questions.ts` | 40-question bank | ✅ Ready |
+| `src/lib/types.ts` | Domain types | ✅ Ready |
+| `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
 
-The template is ready. Next steps depend on user requirements:
-
-1. What type of application to build
-2. What features are needed
-3. Design/branding preferences
-
-## Quick Start Guide
-
-### To add a new page:
-
-Create a file at `src/app/[route]/page.tsx`:
-```tsx
-export default function NewPage() {
-  return <div>New page content</div>;
-}
-```
-
-### To add components:
-
-Create `src/components/` directory and add components:
-```tsx
-// src/components/ui/Button.tsx
-export function Button({ children }: { children: React.ReactNode }) {
-  return <button className="px-4 py-2 bg-blue-600 text-white rounded">{children}</button>;
-}
-```
-
-### To add a database:
-
-Follow `.kilocode/recipes/add-database.md`
-
-### To add API routes:
-
-Create `src/app/api/[route]/route.ts`:
-```tsx
-import { NextResponse } from "next/server";
-
-export async function GET() {
-  return NextResponse.json({ message: "Hello" });
-}
-```
+The app is functional with 40 questions and difficulty tiers. Next steps depend on user requirements:
+1. More question expansions
+2. Additional admin features
+3. Further UI/UX refinements
 
 ## Available Recipes
 
@@ -74,14 +48,16 @@ export async function GET() {
 |--------|------|----------|
 | Add Database | `.kilocode/recipes/add-database.md` | Data persistence with Drizzle + SQLite |
 
-## Pending Improvements
-
-- [ ] Add more recipes (auth, email, etc.)
-- [ ] Add example components
-- [ ] Add testing setup recipe
-
 ## Session History
 
 | Date | Changes |
 |------|---------|
 | Initial | Template created with base setup |
+| 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+
+## Constraints
+
+- Minimal dependencies by default
+- Framework: Next.js 16 + React 19 + Tailwind CSS 4
+- Package manager: pnpm (repo default) / bun (agent default)
+- Deploy target: OpenNext (AWS)

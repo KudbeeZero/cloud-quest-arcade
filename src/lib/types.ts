@@ -9,6 +9,8 @@ export type Domain =
   | "Cloud Technology and Services"
   | "Billing, Pricing and Support";
 
+export type Difficulty = "easy" | "medium" | "hard";
+
 export interface AnswerOption {
   /** Stable identifier, e.g. "a", "b", "c", "d". */
   id: string;
@@ -18,6 +20,7 @@ export interface AnswerOption {
 export interface Question {
   id: string;
   domain: Domain;
+  difficulty: "easy" | "medium" | "hard";
   prompt: string;
   options: AnswerOption[];
   /** The `id` of the correct AnswerOption. */
