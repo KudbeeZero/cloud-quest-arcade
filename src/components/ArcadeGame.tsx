@@ -2,7 +2,13 @@
 
 import { useMemo, useState, useEffect } from "react";
 import questions from "@/data/questions";
-import type { AnswerOption, AnsweredQuestion, Domain, Difficulty } from "@/lib/types";
+import type {
+  AnswerOption,
+  AnsweredQuestion,
+  Domain,
+  Difficulty,
+  Question,
+} from "@/lib/types";
 import {
   computeRunResult,
   pointsForAnswer,
@@ -10,7 +16,14 @@ import {
 } from "@/lib/scoring";
 import { now } from "@/lib/clock";
 
-type Phase = "start" | "playing" | "results";
+type Phase = "start" | "playing" | "results" | "review";
+
+/** A missed question paired with the player's chosen answer, for review. */
+interface MissedItem {
+  question: Question;
+  chosen: AnswerOption | undefined;
+  correct: AnswerOption | undefined;
+}
 
 const LEVEL_XP = 500;
 
@@ -92,6 +105,7 @@ function ProgressBar({
 export default function ArcadeGame() {
   const [phase, setPhase] = useState<Phase>("start");
   const [order, setOrder] = useState<number[]>([]);
+  const [sessionQuestions, setSessionQuestions] = useState<Question[]>([]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answers, setAnswers] = useState<AnsweredQuestion[]>([]);
@@ -119,14 +133,37 @@ export default function ArcadeGame() {
   }, [difficultyFilter]);
 
   const activeQuestion =
-    phase === "playing" ? filteredQuestions[order[current]] : undefined;
+    phase === "playing" ? sessionQuestions[order[current]] : undefined;
 
   const result = useMemo(
     () =>
-      phase === "results"
-        ? computeRunResult(answers, filteredQuestions.length, filteredQuestions)
+      phase === "results" || phase === "review"
+        ? computeRunResult(answers, sessionQuestions.length, sessionQuestions)
         : null,
-    [phase, answers, filteredQuestions],
+    [phase, answers, sessionQuestions],
+  );
+
+  /** Questions the player answered incorrectly in the last run, in answer order. */
+  const missed = useMemo<MissedItem[]>(() => {
+    return answers
+      .filter((a) => !a.correct)
+      .map((a) => {
+        const question = questions.find((q) => q.id === a.questionId);
+        if (!question) return null;
+        return {
+          question,
+          chosen: question.options.find((o) => o.id === a.selectedOptionId),
+          correct: question.options.find(
+            (o) => o.id === question.correctOptionId,
+          ),
+        };
+      })
+      .filter((m): m is MissedItem => m !== null);
+  }, [answers]);
+
+  const missedQuestions = useMemo(
+    () => missed.map((m) => m.question),
+    [missed],
   );
 
   const level = Math.floor(bestScore / LEVEL_XP) + 1;
@@ -148,8 +185,10 @@ export default function ArcadeGame() {
     }
   }, [bestScore]);
 
-  function startGame() {
-    setOrder(shuffle(filteredQuestions.map((_, i) => i)));
+  function startGame(sessionSet: Question[]) {
+    if (sessionSet.length === 0) return;
+    setSessionQuestions(sessionSet);
+    setOrder(shuffle(sessionSet.map((_, i) => i)));
     setCurrent(0);
     setSelected(null);
     setAnswers([]);
@@ -288,7 +327,7 @@ export default function ArcadeGame() {
           </div>
 
           <button
-            onClick={startGame}
+            onClick={() => startGame(filteredQuestions)}
             className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
           >
             ▸ Start Challenge
@@ -352,11 +391,108 @@ export default function ArcadeGame() {
             </div>
           </div>
 
+          {missed.length > 0 && (
+            <button
+              onClick={() => setPhase("review")}
+              className="w-full rounded-2xl border border-amber-300/50 bg-amber-400/10 px-6 py-3 text-sm font-bold text-amber-200 transition hover:bg-amber-400/20 active:scale-[0.99]"
+            >
+              ✎ Review {missed.length} Missed{" "}
+              {missed.length === 1 ? "Question" : "Questions"}
+            </button>
+          )}
+
           <button
-            onClick={startGame}
+            onClick={() => startGame(filteredQuestions)}
             className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
           >
             ▸ Next Mission
+          </button>
+        </section>
+      )}
+
+      {phase === "review" && (
+        <section className="flex flex-col gap-4">
+          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 p-5 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">
+              Study Mode
+            </p>
+            <h2 className="mt-2 text-xl font-black text-white">
+              Review missed questions
+            </h2>
+            <p className="mt-1 text-sm text-neutral-300">
+              {missed.length} to review. Read the explanation, then retry only
+              these to lock them in.
+            </p>
+          </div>
+
+          {missed.length === 0 ? (
+            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-center text-sm text-emerald-100">
+              Perfect run — nothing to review. 🎉
+            </div>
+          ) : (
+            <ol className="flex flex-col gap-3">
+              {missed.map((m, i) => (
+                <li
+                  key={m.question.id}
+                  className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+                      {m.question.domain}
+                    </p>
+                    <span
+                      className={`text-xs font-semibold ${
+                        DIFFICULTY_LABEL[m.question.difficulty].color
+                      }`}
+                    >
+                      {DIFFICULTY_LABEL[m.question.difficulty].label}
+                    </span>
+                  </div>
+                  <h3 className="mt-2 text-sm font-semibold text-white">
+                    <span className="text-neutral-500">{i + 1}. </span>
+                    {m.question.prompt}
+                  </h3>
+
+                  <div className="mt-3 space-y-2 text-sm">
+                    <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-rose-100">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-300">
+                        Your answer
+                      </span>
+                      <p>{m.chosen?.text ?? "No answer"}</p>
+                    </div>
+                    <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-emerald-100">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                        Correct answer
+                      </span>
+                      <p>{m.correct?.text ?? "—"}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 rounded-xl bg-neutral-800/70 p-3 text-sm text-neutral-200">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-300">
+                      Why
+                    </span>
+                    <p className="mt-0.5">{m.question.explanation}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          {missed.length > 0 && (
+            <button
+              onClick={() => startGame(missedQuestions)}
+              className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-amber-500/20 transition hover:brightness-110 active:scale-[0.99]"
+            >
+              ↻ Retry Missed Only
+            </button>
+          )}
+
+          <button
+            onClick={() => setPhase("results")}
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-neutral-200 transition hover:border-white/30"
+          >
+            ← Back to results
           </button>
         </section>
       )}
