@@ -7,6 +7,7 @@ import { useProgress } from "@/lib/useProgress";
 import { useStreakChain, formatTxId } from "@/lib/streak";
 import { computeStreak, todayKey, type DailyGoal } from "@/lib/study";
 import type { GeneratedGotcha } from "@/app/api/deepseek/gotchas/route";
+import type { GeneratedQuestion } from "@/app/api/agents/study/route";
 
 const GOAL_KEY = "cq_dailyGoal";
 
@@ -39,6 +40,9 @@ export default function StudyDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [gotchas, setGotchas] = useState<GeneratedGotcha[]>([]);
+  const [agentMessage, setAgentMessage] = useState<string | null>(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentQuestions, setAgentQuestions] = useState<GeneratedQuestion[]>([]);
 
   const goal = loadJSON<DailyGoal>(GOAL_KEY, { type: "run", completedDates: [] });
   const streak = computeStreak(goal.completedDates, todayKey());
@@ -70,6 +74,29 @@ export default function StudyDashboard() {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function runAgent() {
+    setAgentMessage(null);
+    setAgentLoading(true);
+    try {
+      const res = await fetch("/api/agents/study", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count: 3 }),
+      });
+      const data = (await res.json()) as { questions?: GeneratedQuestion[]; error?: string };
+      if (!res.ok || data.error) {
+        throw new Error(data.error ?? `Request failed (${res.status})`);
+      }
+      const fresh = data.questions ?? [];
+      setAgentQuestions(fresh);
+      setAgentMessage(`Lightning AI Agent returned ${fresh.length} questions.`);
+    } catch (err) {
+      setAgentMessage(err instanceof Error ? err.message : "Agent run failed.");
+    } finally {
+      setAgentLoading(false);
     }
   }
 
@@ -151,6 +178,49 @@ export default function StudyDashboard() {
         {message && <p className="mt-3 text-xs text-cyan-300">{message}</p>}
         {error && <p className="mt-3 text-xs text-rose-300">{error}</p>}
       </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <p className="text-sm text-neutral-300">
+          Run the Lightning AI Study Agent to generate new multiple-choice questions.
+        </p>
+        <button
+          onClick={runAgent}
+          disabled={agentLoading}
+          className="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 sm:w-auto"
+        >
+          {agentLoading ? "Running agent…" : "⚡ Run Lightning AI Agent"}
+        </button>
+        {agentMessage && <p className="mt-3 text-xs text-emerald-300">{agentMessage}</p>}
+      </div>
+
+      {agentQuestions.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+            Agent Questions
+          </p>
+          {agentQuestions.map((q, i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-white/10 bg-white/5 p-4"
+            >
+              <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+                {q.domain}
+              </span>
+              <p className="mt-1 text-sm font-semibold text-white">{q.question}</p>
+              <ul className="mt-2 space-y-1">
+                {Object.entries(q.options).map(([key, value]) => (
+                  <li key={key} className="text-xs text-neutral-300">
+                    <span className="font-bold text-white">{key}.</span> {value}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-emerald-300">
+                Correct: {q.correct} — {q.explanation}
+              </p>
+            </div>
+          ))}
+        </section>
+      )}
 
       {gotchas.length > 0 && (
         <section className="flex flex-col gap-3">

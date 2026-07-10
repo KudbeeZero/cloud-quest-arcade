@@ -55,12 +55,18 @@ deduped home page discovery grid.
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
       can pass pre-computed values. Full-size gauge on `/progress`, compact
       `Link` teaser on the home page discovery grid.
-- [x] **Streak Chain hook** (`src/lib/streak.ts`): lightweight client-side stub
-      for future Algorand integration. `useStreakChain()` hydrates a mock
-      on-chain attestation from `cq_streakChain`, exposes `commitStreak()`
-      (simulates a 1.2s block confirmation and stores a fake Algorand tx ID),
-      and `formatTxId()` for display. Tied into `/progress` ("Streak Chain"
-      card) and `/dashboard` (compact anchor row).
+- [x] **Lightning AI Study Agent** (`agents/study_agent.py`): self-contained
+      Python stub for generating CLF-C02 multiple-choice questions. Supports an
+      OpenAI-compatible endpoint (DeepSeek by default) with env vars
+      `STUDY_AGENT_API_KEY`, `STUDY_AGENT_BASE_URL`, `STUDY_AGENT_MODEL`.
+      Falls back to a stub payload when no key is set. Includes `agents/README.md`
+      with setup and usage notes.
+- [x] **Agent API route** (`src/app/api/agents/study/route.ts`): dashboard-facing
+      stub that returns the same question shape as `agents/study_agent.py` so
+      the UI can be exercised without runtime Python.
+- [x] **Dashboard button**: added a "⚡ Run Lightning AI Agent" button to
+      `/dashboard` that calls `/api/agents/study` and renders returned
+      questions with options, correct answer, and explanation.
 - [x] **Study rhythm features** on `/progress`: daily goal tracker (3 presets,
       auto-credit when a run is logged), consecutive-day streak, 12-topic
       "Exam Readiness" checklist, blended "Cert Progress" bar. State in localStorage
@@ -107,8 +113,10 @@ deduped home page discovery grid.
 | `src/lib/progress.ts` | Run-history store + domain accuracy | ✅ Ready |
 | `src/lib/useProgress.ts` | Client hook over progress store | ✅ Ready |
 | `src/lib/domains.ts` | Shared DOMAIN_ORDER / DOMAIN_BADGE | ✅ Ready |
+| `agents/study_agent.py` | Lightning AI Study Agent stub for CLF-C02 question generation | ✅ New |
+| `agents/README.md` | Study agent setup and usage notes | ✅ New |
+| `src/app/api/agents/study/route.ts` | Dashboard-facing stub for the Lightning AI Study Agent | ✅ New |
 | `src/lib/streak.ts` | Streak blockchain hook stub (`useStreakChain`) for future Algorand integration | ✅ New |
-| `src/lib/study.ts` | Date/streak/goal helpers | ✅ New |
 | `public/` | PWA manifest, service worker, icons | ✅ New |
 | `scripts/gen-icons.mjs` | PNG icon generator | ✅ New |
 | `src/components/StreakCounter.tsx` | Daily streak display for home page | ✅ New |
@@ -142,6 +150,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Added `/agent-hub` (Lightning AI agent dashboard) and `/dashboard` (Study Dashboard) with stub action buttons; typecheck/lint/build all pass |
 | 2026-07-10 | Wired Dashboard "Generate New Gotchas" button to DeepSeek via `/api/deepseek/gotchas`; displays returned gotchas; typecheck/lint/build all pass |
 | 2026-07-10 | Added `src/lib/streak.ts` blockchain hook stub, integrated into `/progress` and `/dashboard`; typecheck/lint/build all pass |
+| 2026-07-10 | Added Lightning AI Study Agent stub (`agents/study_agent.py`), dashboard API route, and "Run Lightning AI Agent" button; typecheck/lint/build all pass |
 
 ## Constraints
 
