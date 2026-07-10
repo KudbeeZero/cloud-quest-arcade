@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
 import questions from "@/data/questions";
 import type { AnswerOption, AnsweredQuestion, Domain, Difficulty } from "@/lib/types";
 import {
@@ -15,6 +16,16 @@ type Phase = "start" | "playing" | "results";
 const LEVEL_XP = 500;
 
 type DifficultyFilter = "all" | Difficulty;
+
+type RunSummary = {
+  id: string;
+  date: number;
+  score: number;
+  accuracy: number;
+  streak: number;
+  questionCount: number;
+  difficulty: DifficultyFilter;
+};
 
 const DIFFICULTY_LABEL: Record<Difficulty, { label: string; color: string }> = {
   easy: { label: "Easy", color: "text-emerald-300" },
@@ -110,6 +121,18 @@ export default function ArcadeGame() {
     }
     return 0;
   });
+  const [runHistory, setRunHistory] = useState<RunSummary[]>(() => {
+    try {
+      const saved = localStorage.getItem("arcade_runHistory");
+      if (saved !== null) {
+        const parsed = JSON.parse(saved) as RunSummary[];
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
 
@@ -141,12 +164,30 @@ export default function ArcadeGame() {
   }, [answers, filteredQuestions]);
 
   useEffect(() => {
+    if (phase === "results" && result) {
+      setRunHistory((prev) => {
+        const summary: RunSummary = {
+          id: crypto.randomUUID(),
+          date: Date.now(),
+          score: result.score,
+          accuracy: result.accuracy,
+          streak: result.bestStreak,
+          questionCount: result.totalQuestions,
+          difficulty: difficultyFilter,
+        };
+        return [summary, ...prev].slice(0, 50);
+      });
+    }
+  }, [phase, result, difficultyFilter]);
+
+  useEffect(() => {
     try {
       localStorage.setItem("arcade_bestScore", String(bestScore));
+      localStorage.setItem("arcade_runHistory", JSON.stringify(runHistory));
     } catch {
       // ignore
     }
-  }, [bestScore]);
+  }, [bestScore, runHistory]);
 
   function startGame() {
     setOrder(shuffle(filteredQuestions.map((_, i) => i)));
@@ -446,23 +487,11 @@ export default function ArcadeGame() {
         </section>
       )}
 
-      <nav
-        aria-label="Primary"
-        className="sticky bottom-0 mt-6 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
-      >
-        {(["Home", "Missions", "Badges", "Review"] as const).map((item, i) => (
-          <span
-            key={item}
-            aria-current={i === 0 ? "page" : undefined}
-            className={`rounded-xl py-2 text-center text-xs font-semibold ${
-              i === 0
-                ? "bg-white/10 text-cyan-200"
-                : "text-neutral-500"
-            }`}
-          >
-            {item}
-          </span>
-        ))}
+      <nav aria-label="Primary" className="mt-6 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur">
+        <Link href="/" className="rounded-xl py-2 text-center text-xs font-semibold text-cyan-200 bg-white/10">Home</Link>
+        <Link href="/gotchas" className="rounded-xl py-2 text-center text-xs font-semibold text-neutral-400 hover:text-white transition">Missions</Link>
+        <Link href="/leaderboard" className="rounded-xl py-2 text-center text-xs font-semibold text-neutral-400 hover:text-white transition">Badges</Link>
+        <Link href="/progress" className="rounded-xl py-2 text-center text-xs font-semibold text-neutral-400 hover:text-white transition">Review</Link>
       </nav>
     </div>
   );

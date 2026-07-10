@@ -1,1 +1,61 @@
 @import "tailwindcss";
+
+.cq-prose {
+  color: #e5e5e5;
+  font-size: 16px;
+  line-height: 1.75;
+  max-width: none;
+}
+.cq-prose h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+.cq-prose h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+.cq-prose p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.cq-prose a {
+  color: #67e8f9;
+  text-decoration: none;
+}
+.cq-prose a:hover {
+  text-decoration: underline;
+}
+.cq-prose ul,
+.cq-prose ol {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+}
+.cq-prose li {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+.cq-prose strong {
+  color: #fff;
+  font-weight: 700;
+}
+.cq-prose code {
+  background: #262626;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+.cq-prose blockquote {
+  border-left: 4px solid #67e8f9;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #a3a3a3;
+}
