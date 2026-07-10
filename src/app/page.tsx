@@ -19,11 +19,6 @@ export default function Home() {
       <div className="mt-8">
         <ArcadeGame />
       </div>
-
-      <footer className="mx-auto mt-8 max-w-md text-center text-xs text-neutral-500">
-        Original practice content. Not affiliated with or endorsed by Amazon Web
-        Services.
-      </footer>
     </main>
   );
 }

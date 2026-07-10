@@ -5,14 +5,26 @@
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── layout.tsx          # Root layout + metadata
-│   ├── page.tsx            # Home page
+│   ├── layout.tsx          # Root layout: SiteNav + footer + metadata
+│   ├── page.tsx            # Home (arcade)
 │   ├── globals.css         # Tailwind imports + global styles
-│   └── favicon.ico         # Site icon
-└── (expand as needed)
-    ├── components/         # React components (add when needed)
-    ├── lib/                # Utilities and helpers (add when needed)
-    └── db/                 # Database files (add via recipe)
+│   ├── admin/page.tsx      # Client-side admin console
+│   ├── privacy|terms|disclaimer/page.tsx   # Legal pages
+│   └── study-tips|domain-guide|resources/page.tsx  # Content pages
+├── components/
+│   ├── SiteNav.tsx         # Sticky top nav (client, active link)
+│   ├── SiteFooter.tsx      # Site-wide footer
+│   ├── ArcadeNav.tsx       # In-game bottom nav
+│   ├── ContentShell.tsx    # Shared content-page layout + CTA
+│   ├── Prose.tsx           # Consistent long-form typography
+│   ├── JsonLd.tsx          # JSON-LD structured-data helper
+│   └── ArcadeGame.tsx      # Quiz UI + game logic
+├── lib/
+│   ├── site.ts             # Central site config (name, url, nav, legal)
+│   ├── types.ts            # Domain/scoring types
+│   ├── scoring.ts          # Scoring + difficulty multipliers
+│   └── clock.ts            # Time helper
+└── data/questions.ts       # 40-question bank
 ```
 
 ## Key Design Patterns
