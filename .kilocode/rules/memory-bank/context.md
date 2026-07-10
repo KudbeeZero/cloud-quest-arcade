@@ -34,13 +34,15 @@ deduped home page discovery grid.
 - [x] **Home page polish**: removed duplicate bottom "Explore the arcade"
       section; the top grid (StreakCounter + 5 discovery cards) is now the
       single source of truth for home-page discovery.
-- [x] **Missions Hub** (`/missions`): split into **Daily Missions** (complete
-      a challenge, answer 10 Qs, 80% accuracy, practice all 4 domains) and
-      **Weekly Missions** (5 runs, 50 Qs, 7-day streak, 70% weekly accuracy)
-      powered by the progress store; surfaces the user's chosen `/progress`
-      study-rhythm goal (auto-detected via `cq_dailyGoal` + `arcade_lastRunDate`)
-      with a deep-link to tune it. Day/week boundaries captured on mount to
-      stay SSR-safe.
+- [x] **Agent Hub** (`/agent-hub`): Lightning AI agent dashboard stub with
+      status cards for GrowPod Monitor, Study Coach, HERMES, AWS Exam Coach,
+      and Readiness Sync. Includes "Trigger Audit" (GrowPod economy check) and
+      "Generate New Gotchas" stub buttons. Uses `useReadinessScore` to mirror
+      the local score. UI-only stubs; backend wiring not yet implemented.
+- [x] **Study Dashboard** (`/dashboard`): lightweight command center with
+      readiness score, daily streak, runs-today stat cards, quick links to
+      Flashcards/Missions/Gotchas, and a "Generate New Questions" stub button
+      (future DeepSeek integration).
 - [x] **Exam Readiness Score** (`src/components/ReadinessScore.tsx`): extracted
       into a reusable component + hook (`useReadinessScore`). Exports
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
@@ -83,8 +85,10 @@ deduped home page discovery grid.
 | `src/components/ContentShell.tsx` | Page chrome wrapper | ✅ Ready |
 | `src/components/Prose.tsx` | Long-form text wrapper | ✅ Ready |
 | `src/components/ServiceWorkerRegister.tsx` | SW registration (prod) | ✅ New |
-| `src/components/ReadinessScore.tsx` | Reusable exam-readiness gauge + `useReadinessScore` hook + `computeReadinessScore` | ✅ Updated |
-| `src/components/ExamReadinessChecklist.tsx` | Self-contained 12-topic readiness checklist (reads/writes `cq_readiness`) | ✅ New |
+| `src/app/agent-hub/page.tsx` | Lightning AI agent dashboard route | ✅ New |
+| `src/components/AgentHub.tsx` | Agent status cards + stub action buttons | ✅ New |
+| `src/app/dashboard/page.tsx` | Study Dashboard route | ✅ New |
+| `src/components/StudyDashboard.tsx` | Readiness/streak/quick-links dashboard component | ✅ New |
 | `src/components/StudyTips.tsx` | Contextual study advice | ✅ Ready |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
@@ -124,7 +128,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Final PWA polish: confirmed retro-arcade icons, deduped home page discovery cards, validated typecheck/lint/build all pass |
 | 2026-07-10 | Missions Hub: added weekly missions + study-rhythm tie-in to `/missions`; typecheck/lint/build all pass |
 | 2026-07-10 | Added `ReadinessScore` component (full + compact teaser), wired into `/progress` and home; typecheck/lint/build all pass |
-| 2026-07-10 | Refactored readiness logic: `ReadinessScore` now exports reusable hook/scoring/topic list, `ExamReadinessChecklist` extracted from `/progress`; typecheck/lint/build all pass |
+| 2026-07-10 | Added `/agent-hub` (Lightning AI agent dashboard) and `/dashboard` (Study Dashboard) with stub action buttons; typecheck/lint/build all pass |
 
 ## Constraints
 
