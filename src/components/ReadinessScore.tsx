@@ -10,6 +10,21 @@ import Link from "next/link";
 import { useProgress } from "@/lib/useProgress";
 import { computeStreak, todayKey, type DailyGoal } from "@/lib/study";
 
+export const READINESS_TOPICS: { id: string; label: string; hint: string }[] = [
+  { id: "shared", label: "Shared Responsibility Model", hint: "What AWS vs. you secure" },
+  { id: "regions", label: "Regions vs. AZs vs. Edge", hint: "Global infrastructure" },
+  { id: "wellarch", label: "Well-Architected Pillars", hint: "6 pillars overview" },
+  { id: "pricing", label: "Pricing Models", hint: "On-demand, Savings Plans, Spot, Reserved" },
+  { id: "compute", label: "Compute Services", hint: "EC2, Lambda, Elastic Beanstalk" },
+  { id: "storage", label: "Storage Services", hint: "S3, EBS, Glacier, EFS" },
+  { id: "databases", label: "Database Services", hint: "RDS, DynamoDB, Aurora" },
+  { id: "network", label: "Networking & VPC", hint: "VPC, subnets, security groups, Route 53" },
+  { id: "security", label: "Security & Compliance", hint: "IAM, KMS, Shield, Artifact" },
+  { id: "monitor", label: "Monitoring & Logging", hint: "CloudWatch, CloudTrail" },
+  { id: "ha", label: "High Availability & Elasticity", hint: "Auto Scaling, Load Balancing" },
+  { id: "cost", label: "Cost Management", hint: "Cost Explorer, Budgets, Calculator" },
+];
+
 const READINESS_KEY = "cq_readiness";
 const GOAL_KEY = "cq_dailyGoal";
 
@@ -33,11 +48,8 @@ export interface ReadinessInputs {
   runCount: number;
 }
 
-export function computeReadiness(inputs: ReadinessInputs): number {
+export function computeReadinessScore(inputs: ReadinessInputs): number {
   const { topicsPct, streak, accuracyPct, runCount } = inputs;
-  // Topic coverage is the heaviest weight, then accuracy, then streak
-  // consistency, with a small bonus once the user has enough reps to call it
-  // a real sample size.
   const topicScore = topicsPct * 0.5;
   const accuracyScore = accuracyPct * 0.3;
   const streakScore = Math.min(streak, 7) * (10 / 7) * 10 * 0.15;
@@ -51,7 +63,18 @@ function pctFromRuns(runs: { accuracy: number }[]): number {
   return Math.round(sum / runs.length);
 }
 
-export function useReadiness(): { score: number; loaded: boolean } {
+export interface ReadinessState {
+  score: number;
+  topicsPct: number;
+  readyCount: number;
+  totalTopics: number;
+  streak: number;
+  accuracyPct: number;
+  runCount: number;
+  loaded: boolean;
+}
+
+export function useReadinessScore(): ReadinessState {
   const { runs, loaded: runsLoaded } = useProgress();
   const [topicsPct, setTopicsPct] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -60,8 +83,7 @@ export function useReadiness(): { score: number; loaded: boolean } {
   useEffect(() => {
     const readiness = loadJSON<Record<string, boolean>>(READINESS_KEY, {});
     const ticked = Object.values(readiness).filter(Boolean).length;
-    const total = 12;
-    setTopicsPct(total > 0 ? Math.round((ticked / total) * 100) : 0);
+    setTopicsPct(READINESS_TOPICS.length > 0 ? Math.round((ticked / READINESS_TOPICS.length) * 100) : 0);
 
     const goal = loadJSON<DailyGoal>(GOAL_KEY, { type: "run", completedDates: [] });
     setStreak(computeStreak(goal.completedDates, todayKey()));
@@ -70,22 +92,37 @@ export function useReadiness(): { score: number; loaded: boolean } {
   }, []);
 
   const accuracyPct = pctFromRuns(runs);
-  const score = computeReadiness({
+  const score = computeReadinessScore({
     topicsPct,
     streak,
     accuracyPct,
     runCount: runs.length,
   });
 
-  return { score, loaded: runsLoaded && hydrated };
+  return {
+    score,
+    topicsPct,
+    readyCount: Math.round((topicsPct / 100) * READINESS_TOPICS.length),
+    totalTopics: READINESS_TOPICS.length,
+    streak,
+    accuracyPct,
+    runCount: runs.length,
+    loaded: runsLoaded && hydrated,
+  };
 }
 
-export default function ReadinessScore({
-  compact = false,
-}: {
+export interface ReadinessScoreProps {
   compact?: boolean;
-}) {
-  const { score, loaded } = useReadiness();
+  /** Optional pre-computed state. If omitted, the component hydrates from the store itself. */
+  state?: Partial<ReadinessState>;
+}
+
+export default function ReadinessScore({ compact = false, state }: ReadinessScoreProps) {
+  const hookState = useReadinessScore();
+  const { score, readyCount, totalTopics, streak, accuracyPct, runCount, loaded } = {
+    ...hookState,
+    ...state,
+  };
 
   if (compact) {
     return (
@@ -96,18 +133,14 @@ export default function ReadinessScore({
       >
         <ScoreRing value={score} size={48} stroke={5} loaded={loaded} />
         <span className="flex-1">
-          <span className="block text-sm font-bold text-white">
-            Exam Readiness
-          </span>
+          <span className="block text-sm font-bold text-white">Exam Readiness</span>
           <span className="block text-xs text-neutral-400">
             {loaded
               ? `${score}% to cert-ready · tap to tune`
               : "Calculating your readiness…"}
           </span>
         </span>
-        <span aria-hidden className="text-cyan-300">
-          ›
-        </span>
+        <span aria-hidden className="text-cyan-300">›</span>
       </Link>
     );
   }
@@ -124,7 +157,8 @@ export default function ReadinessScore({
             {loaded ? `${score}%` : "…"}
           </p>
           <p className="mt-1 text-sm text-neutral-300">
-            Blends your 12-topic checklist, run accuracy, and study streak.
+            Blends topic coverage ({readyCount}/{totalTopics}), run accuracy
+            ({accuracyPct}%), and study streak ({streak} days).
           </p>
           <Link
             href="/progress"

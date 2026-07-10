@@ -41,12 +41,15 @@ deduped home page discovery grid.
       study-rhythm goal (auto-detected via `cq_dailyGoal` + `arcade_lastRunDate`)
       with a deep-link to tune it. Day/week boundaries captured on mount to
       stay SSR-safe.
-- [x] **Exam Readiness Score** (`src/components/ReadinessScore.tsx`): blended
-      0–100 gauge from 12-topic checklist (50%), rolling run accuracy (30%),
-      7-day study streak (15%), and run-volume bonus (5%). Renders a
-      cyan→violet→fuchsia SVG ring. Full size on `/progress`, compact
-      `Link` teaser added to the home-page discovery grid (links back to
-      `/progress`). `useReadiness()` hook is exported for reuse.
+- [x] **Exam Readiness Score** (`src/components/ReadinessScore.tsx`): extracted
+      into a reusable component + hook (`useReadinessScore`). Exports
+      `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
+      can pass pre-computed values. Full-size gauge on `/progress`, compact
+      `Link` teaser on the home page discovery grid.
+- [x] **Exam Readiness Checklist** (`src/components/ExamReadinessChecklist.tsx`):
+      extracted from `/progress/page.tsx` as a self-contained client component
+      that reads/writes `cq_readiness` and renders the 12-topic checklist with
+      progress bar. Used inside the `/progress` "Exam Readiness Checklist" card.
 - [x] **Study rhythm features** on `/progress`: daily goal tracker (3 presets,
       auto-credit when a run is logged), consecutive-day streak, 12-topic
       "Exam Readiness" checklist, blended "Cert Progress" bar. State in localStorage
@@ -80,8 +83,8 @@ deduped home page discovery grid.
 | `src/components/ContentShell.tsx` | Page chrome wrapper | ✅ Ready |
 | `src/components/Prose.tsx` | Long-form text wrapper | ✅ Ready |
 | `src/components/ServiceWorkerRegister.tsx` | SW registration (prod) | ✅ New |
-| `src/components/ReadinessScore.tsx` | Blended 0-100 exam-readiness gauge (full + compact) | ✅ New |
-| `src/components/ReadinessScore.tsx` (exported `useReadiness`, `computeReadiness`) | Reusable readiness hook + pure scoring fn | ✅ New |
+| `src/components/ReadinessScore.tsx` | Reusable exam-readiness gauge + `useReadinessScore` hook + `computeReadinessScore` | ✅ Updated |
+| `src/components/ExamReadinessChecklist.tsx` | Self-contained 12-topic readiness checklist (reads/writes `cq_readiness`) | ✅ New |
 | `src/components/StudyTips.tsx` | Contextual study advice | ✅ Ready |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
@@ -121,6 +124,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Final PWA polish: confirmed retro-arcade icons, deduped home page discovery cards, validated typecheck/lint/build all pass |
 | 2026-07-10 | Missions Hub: added weekly missions + study-rhythm tie-in to `/missions`; typecheck/lint/build all pass |
 | 2026-07-10 | Added `ReadinessScore` component (full + compact teaser), wired into `/progress` and home; typecheck/lint/build all pass |
+| 2026-07-10 | Refactored readiness logic: `ReadinessScore` now exports reusable hook/scoring/topic list, `ExamReadinessChecklist` extracted from `/progress`; typecheck/lint/build all pass |
 
 ## Constraints
 

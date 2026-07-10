@@ -7,7 +7,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import ReadinessScore from "@/components/ReadinessScore";
+import ExamReadinessChecklist from "@/components/ExamReadinessChecklist";
+import ReadinessScore, { useReadinessScore } from "@/components/ReadinessScore";
 import {
   computeLongestStreak,
   computeStreak,
@@ -19,23 +20,7 @@ import {
 
 const GOAL_TYPES: DailyGoalType[] = ["run", "flashcards", "study"];
 
-const READINESS_TOPICS: { id: string; label: string; hint: string }[] = [
-  { id: "shared", label: "Shared Responsibility Model", hint: "What AWS vs. you secure" },
-  { id: "regions", label: "Regions vs. AZs vs. Edge", hint: "Global infrastructure" },
-  { id: "wellarch", label: "Well-Architected Pillars", hint: "6 pillars overview" },
-  { id: "pricing", label: "Pricing Models", hint: "On-demand, Savings Plans, Spot, Reserved" },
-  { id: "compute", label: "Compute Services", hint: "EC2, Lambda, Elastic Beanstalk" },
-  { id: "storage", label: "Storage Services", hint: "S3, EBS, Glacier, EFS" },
-  { id: "databases", label: "Database Services", hint: "RDS, DynamoDB, Aurora" },
-  { id: "network", label: "Networking & VPC", hint: "VPC, subnets, security groups, Route 53" },
-  { id: "security", label: "Security & Compliance", hint: "IAM, KMS, Shield, Artifact" },
-  { id: "monitor", label: "Monitoring & Logging", hint: "CloudWatch, CloudTrail" },
-  { id: "ha", label: "High Availability & Elasticity", hint: "Auto Scaling, Load Balancing" },
-  { id: "cost", label: "Cost Management", hint: "Cost Explorer, Budgets, Calculator" },
-];
-
 const GOAL_KEY = "cq_dailyGoal";
-const READINESS_KEY = "cq_readiness";
 const LAST_RUN_KEY = "arcade_lastRunDate";
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -60,14 +45,12 @@ export default function ProgressPage() {
     type: "run",
     completedDates: [],
   });
-  const [readiness, setReadiness] = useState<Record<string, boolean>>({});
   const [hydrationDone, setHydrationDone] = useState(false);
 
   // Hydrate from localStorage after mount (avoids SSR mismatch).
   // The "Loading…" guard keeps server and first client render identical.
   useEffect(() => {
     setGoal(loadJSON<DailyGoal>(GOAL_KEY, { type: "run", completedDates: [] }));
-    setReadiness(loadJSON<Record<string, boolean>>(READINESS_KEY, {}));
     setHydrationDone(true);
   }, []);
 
@@ -75,12 +58,6 @@ export default function ProgressPage() {
     const updated = { ...goal, type };
     setGoal(updated);
     saveJSON(GOAL_KEY, updated);
-  }
-
-  function toggleTopic(id: string) {
-    const updated = { ...readiness, [id]: !readiness[id] };
-    setReadiness(updated);
-    saveJSON(READINESS_KEY, updated);
   }
 
   const today = todayKey();
@@ -107,13 +84,17 @@ export default function ProgressPage() {
   const streak = computeStreak(goal.completedDates, today);
   const bestStreak = computeLongestStreak(goal.completedDates);
 
-  const readyCount = READINESS_TOPICS.filter((t) => readiness[t.id]).length;
-  const readinessPct = Math.round(
-    (readyCount / READINESS_TOPICS.length) * 100,
-  );
+  const {
+    score: readinessScore,
+    topicsPct: readinessPct,
+    readyCount,
+    loaded: readinessLoaded,
+  } = useReadinessScore();
 
   // Overall cert progress blends topic readiness with study consistency.
-  const certPct = Math.round((readinessPct * 0.7 + Math.min(streak, 7) * 10 * 0.3) / 1);
+  const certPct = Math.round(
+    (readinessPct * 0.7 + Math.min(streak, 7) * 10 * 0.3) / 1,
+  );
 
   if (!hydrationDone) {
     return (
@@ -143,7 +124,15 @@ export default function ProgressPage() {
       </section>
 
       <Card title="Exam Readiness Score" accent="cyan">
-        <ReadinessScore />
+        <ReadinessScore
+          state={{
+            score: readinessScore,
+            topicsPct: readinessPct,
+            readyCount,
+            streak,
+            loaded: readinessLoaded,
+          }}
+        />
       </Card>
 
       <Card title="Cert Progress" accent="fuchsia">
@@ -176,9 +165,7 @@ export default function ProgressPage() {
 
         <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-neutral-800/60 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-white">
-              {GOAL_LABELS[goal.type]}
-            </p>
+            <p className="text-sm font-semibold text-white">{GOAL_LABELS[goal.type]}</p>
             <p className="text-xs text-neutral-400">
               {doneToday ? "Done for today — nice work!" : "Not done yet today"}
             </p>
@@ -212,50 +199,7 @@ export default function ProgressPage() {
       </Card>
 
       <Card title="Exam Readiness Checklist" accent="violet">
-        <p className="mb-3 text-sm text-neutral-300">
-          Tick off the CLF-C02 areas you feel confident explaining out loud.
-        </p>
-        <ProgressBar value={readinessPct} sublabel={`${readyCount}/${READINESS_TOPICS.length}`} />
-        <ul className="mt-4 space-y-2">
-          {READINESS_TOPICS.map((t) => {
-            const checked = !!readiness[t.id];
-            return (
-              <li key={t.id}>
-                <button
-                  role="checkbox"
-                  aria-checked={checked}
-                  onClick={() => toggleTopic(t.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
-                    checked
-                      ? "border-cyan-400/40 bg-cyan-400/10"
-                      : "border-white/10 bg-neutral-800/60 hover:border-white/30"
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border text-xs font-black ${
-                      checked
-                        ? "border-cyan-300 bg-cyan-400 text-neutral-900"
-                        : "border-white/20 text-transparent"
-                    }`}
-                  >
-                    ✓
-                  </span>
-                  <span className="flex-1">
-                    <span
-                      className={`block text-sm font-semibold ${
-                        checked ? "text-cyan-100" : "text-white"
-                      }`}
-                    >
-                      {t.label}
-                    </span>
-                    <span className="block text-xs text-neutral-400">{t.hint}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <ExamReadinessChecklist />
       </Card>
 
       <p className="mt-6 text-center text-xs text-neutral-500">
@@ -305,9 +249,7 @@ function ProgressBar({ value, sublabel }: { value: number; sublabel?: string }) 
     <div>
       {sublabel && (
         <div className="mb-1 flex items-center justify-between text-xs">
-          <span className="font-semibold uppercase tracking-wide text-cyan-300">
-            Progress
-          </span>
+          <span className="font-semibold uppercase tracking-wide text-cyan-300">Progress</span>
           <span className="text-neutral-400">{sublabel}</span>
         </div>
       )}
