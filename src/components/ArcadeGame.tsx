@@ -183,6 +183,11 @@ export default function ArcadeGame() {
   function next() {
     if (current + 1 >= order.length) {
       setBestScore((b) => Math.max(b, score));
+      try {
+        localStorage.setItem("arcade_lastRunDate", new Date().toISOString().slice(0, 10));
+      } catch {
+        // ignore storage failures
+      }
       setPhase("results");
       return;
     }
@@ -446,24 +451,6 @@ export default function ArcadeGame() {
         </section>
       )}
 
-      <nav
-        aria-label="Primary"
-        className="sticky bottom-0 mt-6 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
-      >
-        {(["Home", "Missions", "Badges", "Review"] as const).map((item, i) => (
-          <span
-            key={item}
-            aria-current={i === 0 ? "page" : undefined}
-            className={`rounded-xl py-2 text-center text-xs font-semibold ${
-              i === 0
-                ? "bg-white/10 text-cyan-200"
-                : "text-neutral-500"
-            }`}
-          >
-            {item}
-          </span>
-        ))}
-      </nav>
     </div>
   );
 }
