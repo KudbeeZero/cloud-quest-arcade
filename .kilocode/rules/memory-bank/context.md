@@ -20,6 +20,7 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] CQ-008 Study Mode V1: review missed questions + "Retry Missed Only" (PR #8)
 
 ## Current Structure
 
@@ -37,10 +38,14 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 
 ## Current Focus
 
-The app is functional with 40 questions and difficulty tiers. Next steps depend on user requirements:
-1. More question expansions
-2. Additional admin features
-3. Further UI/UX refinements
+CQ-008 Study Mode / Results Review V1 is **complete and finalized** for merge.
+PR #8 ("feat(CQ-008): study mode — review missed and retry only missed") is
+OPEN, CI GREEN, and MERGEABLE on branch `feat/study-mode-results-review`
+— awaiting owner review/merge. After a quiz, players can review missed
+questions (their answer vs correct + explanation) and retry only the missed
+set. Next lanes are ideas, not committed: timed "blitz" mode, domain progress,
+accessibility pass. Suggested next scoped lane: CQ-009 "Retry Missed — keep
+learned" (drop mastered questions from a second retry set).
 
 ## Available Recipes
 
@@ -54,6 +59,8 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-09 | CQ-008 Study Mode: review missed questions + "Retry Missed Only" |
+| 2026-07-10 | CQ-008 finalized for merge: PR #8 open, CI green, mergeable; docs handoff updated |
 
 ## Constraints
 

@@ -6,20 +6,30 @@ repository. Read it before assuming anything about the stack or scope.
 ## Current repo status
 
 - **Repo:** `KudbeeZero/cloud-quest-arcade`
-- **Live branch for active work:** `feat/arcade-learning-foundation`
+- **Live branch for active work:** `feat/study-mode-results-review`
 - **Package manager:** `pnpm` (lockfile: `pnpm-lock.yaml`; `bun.lock` removed)
 - **State:** Front-end only, fully client-side, no server runtime.
 
-## PR #1 status
+## Merged lanes (history)
 
-- **PR:** #1 "feat: create arcade AWS practitioner trainer foundation"
-- **State:** OPEN
-- **Base:** `main` ← **Head:** `feat/arcade-learning-foundation`
-- **Mergeable:** yes (verify with `gh pr view 1` before pushing)
-- **CI:** GitHub Actions added (`.github/workflows/ci.yml`)
-- **Dependabot:** enabled (`.github/dependabot.yml`, weekly, npm, minor/patch grouped)
+- **PR #1** "feat: create arcade AWS practitioner trainer foundation" — MERGED.
+- **PR #7** "feat: expand question bank and progress UI" — MERGED. Added 40
+  original questions (10/domain), difficulty tiers + scoring multipliers,
+  difficulty filter/HUD/results breakdown, `/admin` demo review page, and
+  `localStorage` bestScore/XP. next + eslint-config-next pinned at 16.2.6.
 
-> All changes for this lane land on PR #1 only. Do NOT open a second PR.
+## Active lane: CQ-008 Study Mode / Results Review V1 — READY FOR MERGE
+
+- **PR:** #8 "feat(CQ-008): study mode — review missed and retry only missed"
+- **State:** OPEN, **CI GREEN**, **MERGEABLE**. Awaiting owner review/merge.
+  Do not merge it from this handoff — owner action only.
+- **Branch:** `feat/study-mode-results-review`
+- **Scope (frontend only):** After results, a "Review Missed Questions" button
+  (shown only if the player missed any). Study Mode lists each missed question
+  with the player's answer, the correct answer, and the explanation, then offers
+  "Retry Missed Only" to start a new session using just those questions.
+- **Out of scope:** backend/auth/DB/CMS, server progress, real exam content,
+  new question creation.
 
 ## Actual stack
 
@@ -58,10 +68,16 @@ Reference docs:
 In scope (front-end only):
 
 - Quiz loop: start → play → results → replay
-- Original sample questions (12) across the four CLF-C02 domains
-- Arcade scoring: base + streak bonus + speed bonus (see `src/lib/scoring.ts`)
+- 40 original questions (10/domain) with easy/medium/hard tiers
+- Arcade scoring: base + streak bonus + speed bonus + difficulty multiplier
+  (see `src/lib/scoring.ts`)
 - Accuracy-based rank, instant explanations
-- Mobile-first arcade rewards dashboard polish (see Phase 5)
+- Difficulty filter (+ HUD label + per-difficulty results breakdown)
+- `localStorage` bestScore/XP persistence (key `arcade_bestScore`)
+- `/admin` demo review page (PIN `arcade2024`, not real auth)
+- **Study Mode (CQ-008, shipped in PR #8):** review missed questions after a
+  run, then "Retry Missed Only" to replay just those questions. PR #8 open, CI
+  green, awaiting merge.
 
 Explicitly out of scope — do NOT add:
 
@@ -76,12 +92,14 @@ Explicitly out of scope — do NOT add:
 ## Next lanes (ideas, not commitments)
 
 1. **CI / deploy preview** — wire CI to a preview deploy (e.g. Vercel preview).
-2. **Larger question bank** — more original items per domain, difficulty tiers.
+2. **Larger question bank** — more original items per domain.
 3. **Timed "blitz" mode** — countdown arcade mode with survival scoring.
 4. **Domain progress** — per-domain accuracy and mastery tracking.
-5. **Local high-score persistence** — `localStorage` best score / streak.
-6. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
-7. **Review mode** — revisit questions answered incorrectly.
+5. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
+6. **CQ-009 (suggested next, frontend-only & scoped):** "Retry Missed — keep
+   learned" — after a "Retry Missed Only" pass, mark questions the player now
+   gets right so a *second* retry set drops the ones already mastered (shrinks
+   the study set). Small, reuses the existing session-set engine.
 
 ## Agent workflow notes
 
