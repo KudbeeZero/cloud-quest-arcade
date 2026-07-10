@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useSyncExternalStore } from "react";
 import questions from "@/data/questions";
 import type { AnswerOption, AnsweredQuestion, Domain, Difficulty } from "@/lib/types";
 import {
@@ -9,6 +9,16 @@ import {
   rankForAccuracy,
 } from "@/lib/scoring";
 import { now } from "@/lib/clock";
+import ParticleBurst, { type BurstType } from "./ParticleBurst";
+import {
+  claimMission,
+  effectiveStreak,
+  getMissionView,
+  getServerSnapshot,
+  getSnapshot,
+  recordRun,
+  subscribe,
+} from "@/lib/progress";
 
 type Phase = "start" | "playing" | "results";
 
@@ -113,6 +123,14 @@ export default function ArcadeGame() {
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
 
+  const progress = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [burst, setBurst] = useState<{ type: BurstType; seq: number } | null>(
+    null,
+  );
+
+  const dailyStreak = effectiveStreak(progress);
+  const mission = getMissionView(progress);
+
   const filteredQuestions = useMemo(() => {
     if (difficultyFilter === "all") return questions;
     return questions.filter((q) => q.difficulty === difficultyFilter);
@@ -182,7 +200,20 @@ export default function ArcadeGame() {
 
   function next() {
     if (current + 1 >= order.length) {
+      const correctCount = answers.filter((a) => a.correct).length;
+      const accuracy =
+        answers.length > 0
+          ? Math.round((correctCount / answers.length) * 100)
+          : 0;
+
+      const { streakExtended } = recordRun(answers.length);
+
       setBestScore((b) => Math.max(b, score));
+
+      const type: BurstType =
+        accuracy >= 90 ? "mastery" : streakExtended ? "streak" : "success";
+      setBurst({ type, seq: Date.now() });
+
       setPhase("results");
       return;
     }
@@ -191,8 +222,20 @@ export default function ArcadeGame() {
     setQuestionStart(now());
   }
 
+  function handleClaim() {
+    claimMission();
+    setBurst({ type: "success", seq: Date.now() });
+  }
+
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="relative mx-auto w-full max-w-md">
+      {burst && (
+        <ParticleBurst
+          key={burst.seq}
+          type={burst.type}
+          onDone={() => setBurst(null)}
+        />
+      )}
       {phase === "start" && (
         <section className="flex flex-col gap-4">
           <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 p-5">
@@ -206,6 +249,44 @@ export default function ArcadeGame() {
               {filteredQuestions.length} cloud-practitioner missions in the bank. Earn
               XP, keep your streak alive, and climb the ranks.
             </p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 to-neutral-900/60 p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
+                Daily Mission
+              </p>
+              <span aria-hidden className="text-lg">
+                🎯
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-neutral-200">
+              Answer {mission.goal} questions today to keep the flame alive.
+            </p>
+            <div className="mt-3">
+              <ProgressBar
+                value={(mission.current / mission.goal) * 100}
+                label="Mission progress"
+                sublabel={`${mission.current}/${mission.goal}`}
+              />
+            </div>
+            <button
+              onClick={handleClaim}
+              disabled={!mission.eligible}
+              className={`mt-3 w-full rounded-xl px-4 py-2 text-sm font-black transition ${
+                mission.claimed
+                  ? "bg-emerald-500/20 text-emerald-200"
+                  : mission.eligible
+                    ? "bg-gradient-to-r from-amber-400 to-orange-500 text-neutral-900 hover:brightness-110 active:scale-[0.99]"
+                    : "cursor-not-allowed bg-neutral-800 text-neutral-500"
+              }`}
+            >
+              {mission.claimed
+                ? "✓ Claimed"
+                : mission.eligible
+                  ? "Claim Reward"
+                  : "In progress"}
+            </button>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -273,8 +354,12 @@ export default function ArcadeGame() {
               <p className="text-xs uppercase tracking-wide text-neutral-400">
                 Streak
               </p>
-              <p className="mt-1 text-2xl font-black text-amber-300">
-                {streak}
+              <p className="mt-1 flex items-center justify-center gap-1 text-2xl font-black text-amber-300">
+                <span aria-hidden>🔥</span>
+                {dailyStreak}
+                <span className="text-sm font-bold text-neutral-300">
+                  day{dailyStreak === 1 ? "" : "s"}
+                </span>
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
