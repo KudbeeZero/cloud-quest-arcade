@@ -27,8 +27,16 @@ function getSnapshot() {
   return getGoal().completedDates;
 }
 
+function getServerSnapshot() {
+  return [];
+}
+
 export default function StreakCounter() {
-  const completedDates = useSyncExternalStore(subscribe, getSnapshot);
+  const completedDates = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
   const streak = computeStreak(completedDates);
 
   return (
