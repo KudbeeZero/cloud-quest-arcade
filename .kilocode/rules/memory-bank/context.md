@@ -55,12 +55,11 @@ deduped home page discovery grid.
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
       can pass pre-computed values. Full-size gauge on `/progress`, compact
       `Link` teaser on the home page discovery grid.
-- [x] **Gotchas page** (`src/app/gotchas/page.tsx`): expanded from 10 to 20
-      high-quality CLF-C02 exam traps, covering HA vs fault tolerance, Free
-      Tier limits, Security Groups vs NACLs, root user usage, KMS scope, S3
-      storage classes, RDS read scaling, SNS/SQS/EventBridge distinctions,
-      AWS Budgets behavior, and consolidated billing. Kept in existing
-      expandable `<details>` format.
+- [x] **Mobile bottom nav polish** (`src/components/SiteNav.tsx`): improved
+      touch targets (larger tap area, `py-3` on mobile), more prominent active
+      state with gradient background + cyan ring + active indicator dot,
+      larger icon badges, and `active:scale-95` press feedback. Kept 6-item
+      layout as 3×2 grid on mobile and single row on desktop.
 - [x] **Agent API route** (`src/app/api/agents/study/route.ts`): dashboard-facing
       stub that returns the same question shape as `agents/study_agent.py` so
       the UI can be exercised without runtime Python.
@@ -95,7 +94,7 @@ deduped home page discovery grid.
 | `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Updated |
 | `src/components/Flashcards.tsx` | Flip-card study UI | ✅ Ready |
 | `src/components/Missions.tsx` | Missions Hub: daily + weekly missions + rhythm-goal tie-in | ✅ Updated |
-| `src/components/SiteNav.tsx` | Global bottom nav (6 items) | ✅ Ready |
+| `src/components/SiteNav.tsx` | Global bottom nav (6 items) with polished mobile touch targets + active state | ✅ Updated |
 | `src/components/SiteFooter.tsx` | Site footer | ✅ New |
 | `src/components/ContentShell.tsx` | Page chrome wrapper | ✅ Ready |
 | `src/components/Prose.tsx` | Long-form text wrapper | ✅ Ready |
@@ -152,6 +151,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Added `src/lib/streak.ts` blockchain hook stub, integrated into `/progress` and `/dashboard`; typecheck/lint/build all pass |
 | 2026-07-10 | Added Lightning AI Study Agent stub (`agents/study_agent.py`), dashboard API route, and "Run Lightning AI Agent" button; typecheck/lint/build all pass |
 | 2026-07-10 | Expanded `/gotchas` page from 10 to 20 high-quality CLF-C02 exam traps; typecheck/lint/build all pass |
+| 2026-07-10 | Polished mobile bottom nav (`SiteNav`): larger touch targets, stronger active state, press feedback; typecheck/lint/build all pass |
 
 ## Constraints
 

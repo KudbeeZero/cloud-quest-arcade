@@ -24,31 +24,44 @@ export default function SiteNav() {
   return (
     <nav
       aria-label="Primary"
-      className="sticky bottom-0 z-10 mt-8 grid grid-cols-3 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur sm:grid-cols-6"
+      className="sticky bottom-0 z-10 mt-8 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
     >
-      {NAV_ITEMS.map((item) => {
-        const active =
-          item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className={`rounded-xl px-2 py-2 text-center text-xs font-semibold transition ${
-              active
-                ? "bg-white/10 text-cyan-200"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <span aria-hidden className="block text-base leading-none">
-              {item.icon}
-            </span>
-            <span className="mt-1 block leading-none">{item.label}</span>
-          </Link>
-        );
-      })}
+      <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-6 sm:gap-2">
+        {NAV_ITEMS.map((item) => {
+          const active =
+            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          return (
+            <li key={item.href} className="flex">
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`flex flex-1 flex-col items-center justify-center rounded-xl px-1 py-3 text-center transition active:scale-95 sm:min-h-0 sm:py-2 ${
+                  active
+                    ? "bg-gradient-to-br from-cyan-500/25 to-violet-500/20 text-cyan-100 ring-1 ring-inset ring-cyan-400/30"
+                    : "text-neutral-400 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`grid h-8 w-8 place-items-center rounded-full text-lg leading-none sm:h-7 sm:w-7 sm:text-base ${
+                    active
+                      ? "bg-cyan-400/15"
+                      : "bg-white/5 group-hover:bg-white/10"
+                  }`}
+                >
+                  {item.icon}
+                </span>
+                <span className="mt-1.5 text-[11px] font-semibold leading-none sm:text-xs">
+                  {item.label}
+                </span>
+                {active && (
+                  <span className="mt-1.5 h-1 w-1 rounded-full bg-cyan-300 sm:mt-1" />
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }
