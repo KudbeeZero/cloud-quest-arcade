@@ -20,6 +20,7 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] **CQ-011:** Domain Progress & Mastery Overview — `src/lib/progress.ts` (cumulative per-domain tallies in localStorage, blended mastery = 70% accuracy + 30% coverage), `src/app/progress/page.tsx` (`/progress` overview via `useSyncExternalStore`), and run recording + link in `ArcadeGame.tsx`
 
 ## Current Structure
 
@@ -33,14 +34,20 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
 | `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
+| `src/lib/progress.ts` | CQ-011 per-domain tallies + mastery | ✅ Ready |
+| `src/app/progress/page.tsx` | CQ-011 mastery overview page | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
 
-The app is functional with 40 questions and difficulty tiers. Next steps depend on user requirements:
-1. More question expansions
-2. Additional admin features
-3. Further UI/UX refinements
+CQ-011 (Domain Progress & Mastery Overview) is implemented and landed via PR #9
+against `main` on `feat/arcade-learning-foundation`. The PR #1 foundation is
+merged.
+
+**Recommended next lane (small, high-value, frontend-only):** improve the
+Flashcards / spaced-review experience (build on `feat/cq-010-flashcards-missions`)
+or add a lightweight streak counter + daily-mission CTA on the start screen to
+drive repeat play. Both reuse existing `localStorage` + `progress.ts` plumbing.
 
 ## Available Recipes
 
@@ -54,6 +61,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | CQ-011 implemented & landed: domain progress + mastery overview (`progress.ts`, `/progress` page, `ArcadeGame` recording). PR #9 opened; PR #1 foundation confirmed merged |
 
 ## Constraints
 

@@ -10,16 +10,24 @@ repository. Read it before assuming anything about the stack or scope.
 - **Package manager:** `pnpm` (lockfile: `pnpm-lock.yaml`; `bun.lock` removed)
 - **State:** Front-end only, fully client-side, no server runtime.
 
-## PR #1 status
+## Active lane status
 
-- **PR:** #1 "feat: create arcade AWS practitioner trainer foundation"
-- **State:** OPEN
-- **Base:** `main` ← **Head:** `feat/arcade-learning-foundation`
-- **Mergeable:** yes (verify with `gh pr view 1` before pushing)
+- **Live branch for active work:** `feat/arcade-learning-foundation`
+- **Foundation PR:** #1 "feat: create arcade AWS practitioner trainer foundation" — **MERGED** into `main`.
 - **CI:** GitHub Actions added (`.github/workflows/ci.yml`)
 - **Dependabot:** enabled (`.github/dependabot.yml`, weekly, npm, minor/patch grouped)
 
-> All changes for this lane land on PR #1 only. Do NOT open a second PR.
+> PR #1 is merged, so new work for this lane goes in a fresh PR off
+> `feat/arcade-learning-foundation` → `main`. Do NOT open a second PR for the
+> *same* already-merged change, but do open a new PR per feature.
+
+## CQ-011 status
+
+- **Feature:** Domain Progress & Mastery Overview
+- **PR:** #9 "feat(CQ-011): domain progress & mastery overview" — OPEN
+- **Landed on:** `feat/arcade-learning-foundation` (clean fast-forward ahead of `main`)
+- **Verification:** `typecheck` ✅ · `lint` ✅ · `build` ✅
+- **FigJam:** mark CQ-011 as complete after merge.
 
 ## Actual stack
 
@@ -78,7 +86,7 @@ Explicitly out of scope — do NOT add:
 1. **CI / deploy preview** — wire CI to a preview deploy (e.g. Vercel preview).
 2. **Larger question bank** — more original items per domain, difficulty tiers.
 3. **Timed "blitz" mode** — countdown arcade mode with survival scoring.
-4. **Domain progress** — per-domain accuracy and mastery tracking.
+4. **Domain progress** — per-domain accuracy and mastery tracking. ✅ **DONE (CQ-011)**
 5. **Local high-score persistence** — `localStorage` best score / streak.
 6. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
 7. **Review mode** — revisit questions answered incorrectly.
