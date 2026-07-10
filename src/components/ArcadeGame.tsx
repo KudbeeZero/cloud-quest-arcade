@@ -8,6 +8,7 @@ import {
   pointsForAnswer,
   rankForAccuracy,
 } from "@/lib/scoring";
+import { recordRun } from "@/lib/progress";
 import { now } from "@/lib/clock";
 
 type Phase = "start" | "playing" | "results";
@@ -182,6 +183,12 @@ export default function ArcadeGame() {
 
   function next() {
     if (current + 1 >= order.length) {
+      const finalResult = computeRunResult(
+        answers,
+        filteredQuestions.length,
+        filteredQuestions,
+      );
+      recordRun(finalResult, difficultyFilter, filteredQuestions);
       setBestScore((b) => Math.max(b, score));
       setPhase("results");
       return;
@@ -445,25 +452,6 @@ export default function ArcadeGame() {
           </div>
         </section>
       )}
-
-      <nav
-        aria-label="Primary"
-        className="sticky bottom-0 mt-6 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
-      >
-        {(["Home", "Missions", "Badges", "Review"] as const).map((item, i) => (
-          <span
-            key={item}
-            aria-current={i === 0 ? "page" : undefined}
-            className={`rounded-xl py-2 text-center text-xs font-semibold ${
-              i === 0
-                ? "bg-white/10 text-cyan-200"
-                : "text-neutral-500"
-            }`}
-          >
-            {item}
-          </span>
-        ))}
-      </nav>
     </div>
   );
 }

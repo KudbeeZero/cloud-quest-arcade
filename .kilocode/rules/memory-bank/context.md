@@ -20,19 +20,34 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] Core secondary pages: Flashcards, Missions, Gotchas, Progress, Leaderboard
+- [x] Shared shell components (SiteNav, ContentShell, Prose) + run-history progress store
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Home page | ✅ Ready |
+| `src/app/page.tsx` | Home page + discovery cards | ✅ Ready |
 | `src/app/admin/page.tsx` | Client-side admin console | ✅ Ready |
+| `src/app/flashcards/page.tsx` | Flip flashcards | ✅ Ready |
+| `src/app/missions/page.tsx` | Daily goals | ✅ Ready |
+| `src/app/gotchas/page.tsx` | Exam trap scenarios | ✅ Ready |
+| `src/app/progress/page.tsx` | Run history + stats | ✅ Ready |
+| `src/app/leaderboard/page.tsx` | Local top scores + share | ✅ Ready |
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
 | `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Ready |
+| `src/components/Flashcards.tsx` | Flip-card study UI | ✅ Ready |
+| `src/components/Missions.tsx` | Daily mission logic | ✅ Ready |
+| `src/components/SiteNav.tsx` | Global bottom nav | ✅ Ready |
+| `src/components/ContentShell.tsx` | Page chrome wrapper | ✅ Ready |
+| `src/components/Prose.tsx` | Long-form text wrapper | ✅ Ready |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
 | `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
+| `src/lib/progress.ts` | Run-history store + domain accuracy | ✅ Ready |
+| `src/lib/useProgress.ts` | Client hook over progress store | ✅ Ready |
+| `src/lib/domains.ts` | Shared DOMAIN_ORDER / DOMAIN_BADGE | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
@@ -54,6 +69,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | Added Flashcards, Missions, Gotchas (10 traps), Progress, and Leaderboard pages; shared SiteNav/ContentShell/Prose shell; run-history progress store wired into ArcadeGame |
 
 ## Constraints
 
