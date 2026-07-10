@@ -9,6 +9,8 @@ import {
   rankForAccuracy,
 } from "@/lib/scoring";
 import { now } from "@/lib/clock";
+import { usePlayerProgress, recordRun, ensureTodayMission } from "@/lib/progress";
+import DailyMission from "@/components/DailyMission";
 
 type Phase = "start" | "playing" | "results";
 
@@ -113,6 +115,12 @@ export default function ArcadeGame() {
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
 
+  const progress = usePlayerProgress();
+
+  useEffect(() => {
+    ensureTodayMission();
+  }, []);
+
   const filteredQuestions = useMemo(() => {
     if (difficultyFilter === "all") return questions;
     return questions.filter((q) => q.difficulty === difficultyFilter);
@@ -182,6 +190,7 @@ export default function ArcadeGame() {
 
   function next() {
     if (current + 1 >= order.length) {
+      recordRun(order.length);
       setBestScore((b) => Math.max(b, score));
       setPhase("results");
       return;
@@ -268,13 +277,15 @@ export default function ArcadeGame() {
             </div>
           </div>
 
+          <DailyMission />
+
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
               <p className="text-xs uppercase tracking-wide text-neutral-400">
                 Streak
               </p>
               <p className="mt-1 text-2xl font-black text-amber-300">
-                {streak}
+                {progress.streak}
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
@@ -351,6 +362,8 @@ export default function ArcadeGame() {
               })}
             </div>
           </div>
+
+          <DailyMission />
 
           <button
             onClick={startGame}

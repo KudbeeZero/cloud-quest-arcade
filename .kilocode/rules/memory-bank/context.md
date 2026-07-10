@@ -20,6 +20,8 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] Daily mission persistence store (`src/lib/progress.ts`) via useSyncExternalStore
+- [x] Daily mission card + claim flow with ParticleBurst celebration
 
 ## Current Structure
 
@@ -29,7 +31,10 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 | `src/app/admin/page.tsx` | Client-side admin console | ✅ Ready |
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
-| `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Ready |
+| `src/lib/progress.ts` | Player progress store (streak, daily mission, claim) | ✅ Ready |
+| `src/components/ParticleBurst.tsx` | CSS particle celebration on claim | ✅ Ready |
+| `src/components/DailyMission.tsx` | Daily mission card + claim flow | ✅ Ready |
+| `src/components/ArcadeGame.tsx` | Quiz UI + game logic + mission wiring | ✅ Ready |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
 | `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
@@ -54,6 +59,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | Added daily mission persistence store, claim flow, and ParticleBurst celebration wired into ArcadeGame |
 
 ## Constraints
 
