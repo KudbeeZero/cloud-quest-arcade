@@ -58,10 +58,12 @@ Reference docs:
 In scope (front-end only):
 
 - Quiz loop: start → play → results → replay
-- Original sample questions (12) across the four CLF-C02 domains
+- Original sample questions (40) across the four CLF-C02 domains
 - Arcade scoring: base + streak bonus + speed bonus (see `src/lib/scoring.ts`)
-- Accuracy-based rank, instant explanations
-- Mobile-first arcade rewards dashboard polish (see Phase 5)
+- Difficulty filter and difficulty breakdown on results
+- Mobile-first arcade rewards dashboard polish
+- **Domain progress & mastery overview** at `/progress` (per-domain accuracy, mastery level, progress bars, localStorage-backed)
+- **localStorage persistence** for bestScore/XP and per-domain progress (`arcade_progress`)
 
 Explicitly out of scope — do NOT add:
 
@@ -75,11 +77,11 @@ Explicitly out of scope — do NOT add:
 
 ## Next lanes (ideas, not commitments)
 
-1. **CI / deploy preview** — wire CI to a preview deploy (e.g. Vercel preview).
+1. ~~**CI / deploy preview** — wire CI to a preview deploy (e.g. Vercel preview).~~ (next.config.ts exists, not yet verified)
 2. **Larger question bank** — more original items per domain, difficulty tiers.
 3. **Timed "blitz" mode** — countdown arcade mode with survival scoring.
-4. **Domain progress** — per-domain accuracy and mastery tracking.
-5. **Local high-score persistence** — `localStorage` best score / streak.
+4. ~~**Domain progress** — per-domain accuracy and mastery tracking.~~ (completed in CQ-011)
+5. ~~**Local high-score persistence** — `localStorage` best score / streak.~~ (completed)
 6. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
 7. **Review mode** — revisit questions answered incorrectly.
 

@@ -9,6 +9,7 @@ import {
   rankForAccuracy,
 } from "@/lib/scoring";
 import { now } from "@/lib/clock";
+import { recordRunAnswers } from "@/lib/progress";
 
 type Phase = "start" | "playing" | "results";
 
@@ -183,6 +184,13 @@ export default function ArcadeGame() {
   function next() {
     if (current + 1 >= order.length) {
       setBestScore((b) => Math.max(b, score));
+      try {
+        const domainMap = new Map<string, Domain>();
+        questions.forEach((q) => domainMap.set(q.id, q.domain));
+        recordRunAnswers(answers, domainMap);
+      } catch {
+        // ignore
+      }
       setPhase("results");
       return;
     }
@@ -450,19 +458,22 @@ export default function ArcadeGame() {
         aria-label="Primary"
         className="sticky bottom-0 mt-6 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
       >
-        {(["Home", "Missions", "Badges", "Review"] as const).map((item, i) => (
-          <span
-            key={item}
-            aria-current={i === 0 ? "page" : undefined}
-            className={`rounded-xl py-2 text-center text-xs font-semibold ${
-              i === 0
-                ? "bg-white/10 text-cyan-200"
-                : "text-neutral-500"
-            }`}
-          >
-            {item}
-          </span>
-        ))}
+        {(["Home", "Missions", "Badges", "Progress"] as const).map((item) => {
+          const href = item === "Home" ? "/" : `/progress`;
+          const isProgress = item === "Progress";
+          return (
+            <a
+              key={item}
+              href={href}
+              aria-current={isProgress ? "page" : undefined}
+              className={`rounded-xl py-2 text-center text-xs font-semibold transition ${
+                isProgress ? "bg-white/10 text-cyan-200" : "text-neutral-500 hover:text-neutral-300"
+              }`}
+            >
+              {item}
+            </a>
+          );
+        })}
       </nav>
     </div>
   );
