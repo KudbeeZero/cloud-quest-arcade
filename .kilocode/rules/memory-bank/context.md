@@ -35,12 +35,14 @@ run-history progress store.
 - [x] **Core secondary pages**: Flashcards, Missions, Gotchas, Progress, Leaderboard
 - [x] **Shared shell components**: SiteNav, ContentShell, Prose
 - [x] **Run-history progress store**: `src/lib/progress.ts`, `useProgress.ts`, `domains.ts`
+- [x] **Daily streak counter** on home page (`StreakCounter` component)
+- [x] **Branch consolidation**: Merged agent_226025b8 and agent_d13a52a6 into `main`
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Home: hero + discovery cards + quiz | ✅ Ready |
+| `src/app/page.tsx` | Home: hero + streak counter + discovery cards + quiz | ✅ Updated |
 | `src/app/admin/page.tsx` | PIN-protected admin console | ✅ Ready |
 | `src/app/flashcards/page.tsx` | Flip flashcards | ✅ Ready |
 | `src/app/missions/page.tsx` | Daily goals | ✅ Ready |
@@ -69,6 +71,7 @@ run-history progress store.
 | `src/lib/study.ts` | Date/streak/goal helpers | ✅ New |
 | `public/` | PWA manifest, service worker, icons | ✅ New |
 | `scripts/gen-icons.mjs` | PNG icon generator | ✅ New |
+| `src/components/StreakCounter.tsx` | Daily streak display for home page | ✅ New |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
@@ -92,6 +95,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-09 | Expanded to AWS practitioner quiz app (40 Qs, difficulty, admin, localStorage) |
 | 2026-07-10 | Added Flashcards, Missions, Gotchas, Progress, Leaderboard pages; shared SiteNav/ContentShell/Prose shell; run-history progress store wired into ArcadeGame |
 | 2026-07-10 | PWA installability (icons/manifest/SW) + `/progress` study rhythm features (daily goals, streaks, readiness checklist) + SiteFooter + study helpers |
+| 2026-07-10 | Consolidated feature branches into `main`; added daily streak counter to home page |
 
 ## Constraints
 
