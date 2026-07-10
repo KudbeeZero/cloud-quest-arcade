@@ -54,6 +54,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | Recovered app after previous cloud agent hit a rate limit mid-`pnpm install`. Root cause: `node_modules` was missing. Ran `pnpm install`, confirmed `typecheck`, `lint`, and `build` all pass (5 routes generated). App back to running. |
 
 ## Constraints
 
