@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
 import questions from "@/data/questions";
 import type { AnswerOption, AnsweredQuestion, Domain, Difficulty } from "@/lib/types";
 import {
@@ -8,6 +9,7 @@ import {
   pointsForAnswer,
   rankForAccuracy,
 } from "@/lib/scoring";
+import { recordRun } from "@/lib/progress";
 import { now } from "@/lib/clock";
 
 type Phase = "start" | "playing" | "results";
@@ -183,6 +185,7 @@ export default function ArcadeGame() {
   function next() {
     if (current + 1 >= order.length) {
       setBestScore((b) => Math.max(b, score));
+      recordRun(answers, filteredQuestions);
       setPhase("results");
       return;
     }
@@ -293,6 +296,13 @@ export default function ArcadeGame() {
           >
             ▸ Start Challenge
           </button>
+
+          <Link
+            href="/progress"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-center text-sm font-bold text-cyan-200 transition hover:border-cyan-300/60"
+          >
+            📊 View domain mastery
+          </Link>
         </section>
       )}
 
