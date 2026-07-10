@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import questions from "@/data/questions";
 import type { AnswerOption, AnsweredQuestion, Domain, Difficulty } from "@/lib/types";
 import {
@@ -8,6 +10,7 @@ import {
   pointsForAnswer,
   rankForAccuracy,
 } from "@/lib/scoring";
+import { loadPlayerName, saveScore } from "@/lib/leaderboard";
 import { now } from "@/lib/clock";
 
 type Phase = "start" | "playing" | "results";
@@ -44,6 +47,14 @@ const DOMAIN_BADGE: Record<Domain, string> = {
   "Cloud Technology and Services": "⚙️",
   "Billing, Pricing and Support": "💡",
 };
+
+/** Bottom navigation items. Links route to real pages where available. */
+const NAV_ITEMS = [
+  { label: "Home", href: "/" },
+  { label: "Missions", href: "/" },
+  { label: "Badges", href: "/" },
+  { label: "Leaderboard", href: "/leaderboard" },
+] as const;
 
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
@@ -90,6 +101,7 @@ function ProgressBar({
 }
 
 export default function ArcadeGame() {
+  const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>("start");
   const [order, setOrder] = useState<number[]>([]);
   const [current, setCurrent] = useState(0);
@@ -112,6 +124,9 @@ export default function ArcadeGame() {
   });
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
+  const [shareImg, setShareImg] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const savedRef = useRef(false);
 
   const filteredQuestions = useMemo(() => {
     if (difficultyFilter === "all") return questions;
@@ -147,6 +162,96 @@ export default function ArcadeGame() {
       // ignore
     }
   }, [bestScore]);
+
+  // Persist a finished run to the local top-10 leaderboard once per run.
+  useEffect(() => {
+    if (phase === "results" && result && !savedRef.current) {
+      savedRef.current = true;
+      saveScore(
+        result,
+        difficultyFilter === "all" ? "mixed" : difficultyFilter,
+        loadPlayerName(),
+      );
+    }
+    if (phase !== "results") savedRef.current = false;
+  }, [phase, result, difficultyFilter]);
+
+  function buildShareText(): string {
+    if (!result) return "";
+    return [
+      "🕹️ Cloud Quest Arcade",
+      `Rank: ${rankForAccuracy(result.accuracy)}`,
+      `Score: ${result.score.toLocaleString()} XP`,
+      `Accuracy: ${result.accuracy}% (${result.correctCount}/${result.totalQuestions})`,
+      `Best streak: ${result.bestStreak}`,
+      "#AWS #CloudPractitioner",
+    ].join("\n");
+  }
+
+  /** Render the result to a canvas and return a PNG data URL. */
+  function generateResultImage(): string | null {
+    if (typeof document === "undefined" || !result) return null;
+    const w = 640;
+    const h = 360;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, "#0f172a");
+    grad.addColorStop(1, "#1e1b4b");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.fillStyle = "#67e8f9";
+    ctx.font = "600 18px sans-serif";
+    ctx.fillText("CLOUD QUEST ARCADE", 32, 48);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 40px sans-serif";
+    ctx.fillText(`Rank: ${rankForAccuracy(result.accuracy)}`, 32, 104);
+
+    ctx.font = "700 28px sans-serif";
+    ctx.fillStyle = "#f0abfc";
+    ctx.fillText(`${result.score.toLocaleString()} XP`, 32, 160);
+
+    const stats = [
+      `Accuracy: ${result.accuracy}%`,
+      `Correct: ${result.correctCount}/${result.totalQuestions}`,
+      `Best streak: ${result.bestStreak}`,
+    ];
+    ctx.fillStyle = "#d4d4d8";
+    ctx.font = "500 22px sans-serif";
+    stats.forEach((s, i) => ctx.fillText(s, 32, 214 + i * 34));
+
+    ctx.fillStyle = "#a1a1aa";
+    ctx.font = "500 16px sans-serif";
+    ctx.fillText("#AWS #CloudPractitioner", 32, h - 28);
+
+    return canvas.toDataURL("image/png");
+  }
+
+  async function handleShare() {
+    const text = buildShareText();
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "Cloud Quest Arcade", text });
+        return;
+      } catch {
+        // user cancelled or unsupported — fall through to clipboard + image
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard unavailable
+    }
+    setShareImg(generateResultImage());
+  }
 
   function startGame() {
     setOrder(shuffle(filteredQuestions.map((_, i) => i)));
@@ -352,12 +457,38 @@ export default function ArcadeGame() {
             </div>
           </div>
 
-          <button
-            onClick={startGame}
-            className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
-          >
-            ▸ Next Mission
-          </button>
+          {shareImg && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={shareImg}
+                alt="Shareable result card"
+                className="mx-auto w-full max-w-xs rounded-xl"
+              />
+              <a
+                href={shareImg}
+                download="cloud-quest-result.png"
+                className="mt-3 block w-full rounded-xl border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+              >
+                ⬇ Download image
+              </a>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={handleShare}
+              className="w-full rounded-2xl border border-fuchsia-400/50 bg-fuchsia-500/10 px-6 py-4 text-lg font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 active:scale-[0.99]"
+            >
+              {copied ? "✓ Copied!" : "⤴ Share Result"}
+            </button>
+            <button
+              onClick={startGame}
+              className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
+            >
+              ▸ Next Mission
+            </button>
+          </div>
         </section>
       )}
 
@@ -450,19 +581,23 @@ export default function ArcadeGame() {
         aria-label="Primary"
         className="sticky bottom-0 mt-6 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
       >
-        {(["Home", "Missions", "Badges", "Review"] as const).map((item, i) => (
-          <span
-            key={item}
-            aria-current={i === 0 ? "page" : undefined}
-            className={`rounded-xl py-2 text-center text-xs font-semibold ${
-              i === 0
-                ? "bg-white/10 text-cyan-200"
-                : "text-neutral-500"
-            }`}
-          >
-            {item}
-          </span>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const active = pathname === item.href;
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={`rounded-xl py-2 text-center text-xs font-semibold transition ${
+                active
+                  ? "bg-white/10 text-cyan-200"
+                  : "text-neutral-500 hover:text-neutral-300"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );

@@ -20,6 +20,9 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] Local top-10 high-score leaderboard at /leaderboard (localStorage, no backend)
+- [x] "Share Result" button on results screen (Web Share API + canvas image fallback)
+- [x] Leaderboard link added to in-game nav
 
 ## Current Structure
 
@@ -33,6 +36,8 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
 | `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
+| `src/lib/leaderboard.ts` | Local top-10 leaderboard persistence | ✅ Ready |
+| `src/app/leaderboard/page.tsx` | Leaderboard page (call sign + board) | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
@@ -54,6 +59,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | Added local top-10 leaderboard (/leaderboard), Share Result button with canvas image, and Leaderboard nav link |
 
 ## Constraints
 
