@@ -41,8 +41,15 @@ deduped home page discovery grid.
       the local score. UI-only stubs; backend wiring not yet implemented.
 - [x] **Study Dashboard** (`/dashboard`): lightweight command center with
       readiness score, daily streak, runs-today stat cards, quick links to
-      Flashcards/Missions/Gotchas, and a "Generate New Questions" stub button
-      (future DeepSeek integration).
+      Flashcards/Missions/Gotchas, and a **DeepSeek-powered "Generate New
+      Gotchas"** button. Calls `/api/deepseek/gotchas`, which proxies to the
+      DeepSeek API (`deepseek-chat`) with a JSON prompt and displays the
+      returned gotchas in an expandable list. Requires `DEEPSEEK_API_KEY` in
+      `.env.local`.
+- [x] **DeepSeek API proxy** (`src/app/api/deepseek/gotchas/route.ts`): thin
+      server-side route that keeps the API key out of the client, validates the
+      response shape, and returns an array of `{id,domain,trap,why}` gotchas.
+      `.env.example` included for local setup.
 - [x] **Exam Readiness Score** (`src/components/ReadinessScore.tsx`): extracted
       into a reusable component + hook (`useReadinessScore`). Exports
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
@@ -88,7 +95,8 @@ deduped home page discovery grid.
 | `src/app/agent-hub/page.tsx` | Lightning AI agent dashboard route | ✅ New |
 | `src/components/AgentHub.tsx` | Agent status cards + stub action buttons | ✅ New |
 | `src/app/dashboard/page.tsx` | Study Dashboard route | ✅ New |
-| `src/components/StudyDashboard.tsx` | Readiness/streak/quick-links dashboard component | ✅ New |
+| `src/app/api/deepseek/gotchas/route.ts` | DeepSeek API proxy for generating CLF-C02 gotchas | ✅ New |
+| `.env.example` | DeepSeek API key placeholder | ✅ New |
 | `src/components/StudyTips.tsx` | Contextual study advice | ✅ Ready |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
@@ -129,6 +137,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Missions Hub: added weekly missions + study-rhythm tie-in to `/missions`; typecheck/lint/build all pass |
 | 2026-07-10 | Added `ReadinessScore` component (full + compact teaser), wired into `/progress` and home; typecheck/lint/build all pass |
 | 2026-07-10 | Added `/agent-hub` (Lightning AI agent dashboard) and `/dashboard` (Study Dashboard) with stub action buttons; typecheck/lint/build all pass |
+| 2026-07-10 | Wired Dashboard "Generate New Gotchas" button to DeepSeek via `/api/deepseek/gotchas`; displays returned gotchas; typecheck/lint/build all pass |
 
 ## Constraints
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useReadinessScore } from "@/components/ReadinessScore";
 import { useProgress } from "@/lib/useProgress";
 import { computeStreak, todayKey, type DailyGoal } from "@/lib/study";
+import type { GeneratedGotcha } from "@/app/api/deepseek/gotchas/route";
 
 const GOAL_KEY = "cq_dailyGoal";
 
@@ -27,6 +28,9 @@ export default function StudyDashboard() {
   const { score, loaded: readinessLoaded } = useReadinessScore();
   const { runs, loaded: progressLoaded } = useProgress();
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [gotchas, setGotchas] = useState<GeneratedGotcha[]>([]);
 
   const goal = loadJSON<DailyGoal>(GOAL_KEY, { type: "run", completedDates: [] });
   const streak = computeStreak(goal.completedDates, todayKey());
@@ -37,9 +41,28 @@ export default function StudyDashboard() {
     return r.timestamp >= d.getTime();
   }).length;
 
-  function generateQuestions() {
-    setMessage("Queued DeepSeek question-generation job. New items will appear in the question bank when ready.");
-    setTimeout(() => setMessage(null), 4000);
+  async function generateQuestions() {
+    setMessage(null);
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/deepseek/gotchas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count: 5 }),
+      });
+      const data = (await res.json()) as { gotchas?: GeneratedGotcha[]; error?: string };
+      if (!res.ok || data.error) {
+        throw new Error(data.error ?? `Request failed (${res.status})`);
+      }
+      const fresh = data.gotchas ?? [];
+      setGotchas(fresh);
+      setMessage(`Generated ${fresh.length} new gotchas. Review them below.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -86,16 +109,49 @@ export default function StudyDashboard() {
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
         <p className="text-sm text-neutral-300">
-          Generate fresh CLF-C02 practice questions for the bank.
+          Generate fresh CLF-C02 practice gotchas via DeepSeek.
         </p>
         <button
           onClick={generateQuestions}
-          className="mt-3 w-full rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 sm:w-auto"
+          disabled={loading}
+          className="mt-3 w-full rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 sm:w-auto"
         >
-          ✨ Generate New Questions
+          {loading ? "Generating…" : "✨ Generate New Gotchas"}
         </button>
         {message && <p className="mt-3 text-xs text-cyan-300">{message}</p>}
+        {error && <p className="mt-3 text-xs text-rose-300">{error}</p>}
       </div>
+
+      {gotchas.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
+            Generated Gotchas
+          </p>
+          {gotchas.map((g) => (
+            <details
+              key={g.id}
+              className="group rounded-2xl border border-white/10 bg-white/5 p-4 [&_summary::-webkit-details-marker]:hidden"
+            >
+              <summary className="cursor-pointer list-none">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+                      {g.domain}
+                    </span>
+                    <p className="mt-1 text-sm font-semibold text-white">{g.trap}</p>
+                  </div>
+                  <span className="mt-1 shrink-0 text-cyan-300 transition group-open:rotate-45">
+                    +
+                  </span>
+                </div>
+              </summary>
+              <p className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-100">
+                {g.why}
+              </p>
+            </details>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
