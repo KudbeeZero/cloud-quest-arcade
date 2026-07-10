@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ExamReadinessChecklist from "@/components/ExamReadinessChecklist";
 import ReadinessScore, { useReadinessScore } from "@/components/ReadinessScore";
+import { useStreakChain, formatTxId } from "@/lib/streak";
 import {
   computeLongestStreak,
   computeStreak,
@@ -90,6 +91,14 @@ export default function ProgressPage() {
     readyCount,
     loaded: readinessLoaded,
   } = useReadinessScore();
+
+  const {
+    status: chainStatus,
+    txId,
+    committedToday,
+    loading: chainLoading,
+    commitStreak,
+  } = useStreakChain();
 
   // Overall cert progress blends topic readiness with study consistency.
   const certPct = Math.round(
@@ -196,6 +205,36 @@ export default function ProgressPage() {
             ▸ Start a challenge run to auto-complete this goal
           </Link>
         )}
+      </Card>
+
+      <Card title="Streak Chain" accent="fuchsia">
+        <p className="mb-3 text-sm text-neutral-300">
+          Anchor today&apos;s streak on-chain (Algorand stub). The tx ID is
+          simulated and stored locally until real SDK integration is wired.
+        </p>
+        <div className="rounded-xl border border-white/10 bg-neutral-800/60 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">
+                {committedToday ? "Streak anchored" : "Not anchored today"}
+              </p>
+              <p className="text-xs text-neutral-400">
+                {chainStatus === "confirmed" && txId
+                  ? `Tx: ${formatTxId(txId)}`
+                  : chainStatus === "pending"
+                    ? "Waiting for block confirmation…"
+                    : "Commit to make your streak tamper-evident."}
+              </p>
+            </div>
+            <button
+              onClick={() => commitStreak(streak)}
+              disabled={chainLoading || committedToday}
+              className="rounded-lg bg-gradient-to-r from-fuchsia-400 to-violet-500 px-4 py-2 text-xs font-bold text-neutral-900 transition hover:brightness-110 disabled:opacity-50"
+            >
+              {chainLoading ? "Committing…" : committedToday ? "Anchored" : "Anchor"}
+            </button>
+          </div>
+        </div>
       </Card>
 
       <Card title="Exam Readiness Checklist" accent="violet">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useReadinessScore } from "@/components/ReadinessScore";
 import { useProgress } from "@/lib/useProgress";
+import { useStreakChain, formatTxId } from "@/lib/streak";
 import { computeStreak, todayKey, type DailyGoal } from "@/lib/study";
 import type { GeneratedGotcha } from "@/app/api/deepseek/gotchas/route";
 
@@ -27,6 +28,13 @@ const QUICK_LINKS = [
 export default function StudyDashboard() {
   const { score, loaded: readinessLoaded } = useReadinessScore();
   const { runs, loaded: progressLoaded } = useProgress();
+  const {
+    status: chainStatus,
+    txId,
+    committedToday,
+    loading: chainLoading,
+    commitStreak,
+  } = useStreakChain();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -106,6 +114,28 @@ export default function StudyDashboard() {
           ))}
         </div>
       </section>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">Streak Chain</p>
+            <p className="text-xs text-neutral-400">
+              {committedToday
+                ? `Anchored today · ${formatTxId(txId)}`
+                : chainStatus === "pending"
+                  ? "Waiting for block confirmation…"
+                  : "Anchor your streak on-chain (Algorand stub)."}
+            </p>
+          </div>
+          <button
+            onClick={() => commitStreak(streak)}
+            disabled={chainLoading || committedToday}
+            className="mt-2 rounded-xl bg-gradient-to-r from-fuchsia-400 to-violet-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 sm:mt-0"
+          >
+            {chainLoading ? "Committing…" : committedToday ? "Anchored" : "Anchor Streak"}
+          </button>
+        </div>
+      </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
         <p className="text-sm text-neutral-300">

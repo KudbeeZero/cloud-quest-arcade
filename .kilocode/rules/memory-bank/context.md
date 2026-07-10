@@ -55,10 +55,12 @@ deduped home page discovery grid.
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
       can pass pre-computed values. Full-size gauge on `/progress`, compact
       `Link` teaser on the home page discovery grid.
-- [x] **Exam Readiness Checklist** (`src/components/ExamReadinessChecklist.tsx`):
-      extracted from `/progress/page.tsx` as a self-contained client component
-      that reads/writes `cq_readiness` and renders the 12-topic checklist with
-      progress bar. Used inside the `/progress` "Exam Readiness Checklist" card.
+- [x] **Streak Chain hook** (`src/lib/streak.ts`): lightweight client-side stub
+      for future Algorand integration. `useStreakChain()` hydrates a mock
+      on-chain attestation from `cq_streakChain`, exposes `commitStreak()`
+      (simulates a 1.2s block confirmation and stores a fake Algorand tx ID),
+      and `formatTxId()` for display. Tied into `/progress` ("Streak Chain"
+      card) and `/dashboard` (compact anchor row).
 - [x] **Study rhythm features** on `/progress`: daily goal tracker (3 presets,
       auto-credit when a run is logged), consecutive-day streak, 12-topic
       "Exam Readiness" checklist, blended "Cert Progress" bar. State in localStorage
@@ -105,6 +107,7 @@ deduped home page discovery grid.
 | `src/lib/progress.ts` | Run-history store + domain accuracy | ✅ Ready |
 | `src/lib/useProgress.ts` | Client hook over progress store | ✅ Ready |
 | `src/lib/domains.ts` | Shared DOMAIN_ORDER / DOMAIN_BADGE | ✅ Ready |
+| `src/lib/streak.ts` | Streak blockchain hook stub (`useStreakChain`) for future Algorand integration | ✅ New |
 | `src/lib/study.ts` | Date/streak/goal helpers | ✅ New |
 | `public/` | PWA manifest, service worker, icons | ✅ New |
 | `scripts/gen-icons.mjs` | PNG icon generator | ✅ New |
@@ -138,6 +141,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Added `ReadinessScore` component (full + compact teaser), wired into `/progress` and home; typecheck/lint/build all pass |
 | 2026-07-10 | Added `/agent-hub` (Lightning AI agent dashboard) and `/dashboard` (Study Dashboard) with stub action buttons; typecheck/lint/build all pass |
 | 2026-07-10 | Wired Dashboard "Generate New Gotchas" button to DeepSeek via `/api/deepseek/gotchas`; displays returned gotchas; typecheck/lint/build all pass |
+| 2026-07-10 | Added `src/lib/streak.ts` blockchain hook stub, integrated into `/progress` and `/dashboard`; typecheck/lint/build all pass |
 
 ## Constraints
 
