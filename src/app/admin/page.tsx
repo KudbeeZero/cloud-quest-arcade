@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import questions from "@/data/questions";
 import type { Domain, Difficulty } from "@/lib/types";
+import NavBar from "@/components/NavBar";
 
 const ADMIN_PIN = "arcade2024";
 
@@ -142,6 +143,8 @@ export default function AdminPage() {
           ))}
         </ul>
       </div>
+
+      <NavBar />
     </div>
   );
 }

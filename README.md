@@ -21,6 +21,13 @@ or AWS API integration yet.
   plain-language explanation.
 - **Playful ranks** — end-of-run rank based on accuracy (Cadet → Cloud
   Architect).
+- **Flashcards** — flip-and-recall review with mastery tracking
+  (`/flashcards`).
+- **Study rhythm** — daily/weekly goals, a study streak, and an **Exam
+  Readiness Score** (runs + flashcards mastered + gotchas studied) on the
+  Progress page (`/progress`).
+- **Auto-linked loop** — finishing a quiz run auto-completes the "1 run" daily
+  goal, and every revealed explanation counts as a "gotcha studied".
 
 ## Tech stack
 
@@ -58,18 +65,28 @@ Then open http://localhost:3000.
 ```
 src/
   app/
-    layout.tsx        App shell + metadata
-    page.tsx          Home page (renders the arcade)
-    globals.css       Tailwind entry
+    layout.tsx          App shell + metadata
+    page.tsx            Home: quiz + readiness + study tips
+    progress/page.tsx   Study progress: readiness, goals, checklist, streak
+    flashcards/page.tsx Flashcard review mode
+    admin/page.tsx      Admin console (PIN-protected)
+    globals.css         Tailwind entry
   components/
-    ArcadeGame.tsx    Client component: the quiz game loop
+    ArcadeGame.tsx        Client component: the quiz game loop
+    Flashcards.tsx        Flashcard review + mastery
+    Missions.tsx          Daily/weekly study goals
+    NavBar.tsx            Shared bottom navigation
+    ReadinessScore.tsx    Exam Readiness Score widget
+    ExamReadinessChecklist.tsx  Readiness milestone checklist
+    StudyTips.tsx        Home study-tip teaser
   data/
-    questions.ts      Original sample question bank
+    questions.ts          Original sample question bank (40)
   lib/
-    types.ts          Domain types (Question, RunResult, ...)
-    scoring.ts        Scoring, streak/speed bonuses, ranks
+    types.ts              Domain types (Question, RunResult, ...)
+    scoring.ts            Scoring, streak/speed bonuses, ranks
+    progress.ts           Client progress store (localStorage)
 docs/
-  PRODUCT_SPEC.md     Product spec and roadmap
+  PRODUCT_SPEC.md         Product spec and roadmap
 ```
 
 ## Extending the question bank

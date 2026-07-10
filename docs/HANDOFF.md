@@ -58,10 +58,19 @@ Reference docs:
 In scope (front-end only):
 
 - Quiz loop: start → play → results → replay
-- Original sample questions (12) across the four CLF-C02 domains
+- Original sample questions (40) across the four CLF-C02 domains
 - Arcade scoring: base + streak bonus + speed bonus (see `src/lib/scoring.ts`)
 - Accuracy-based rank, instant explanations
-- Mobile-first arcade rewards dashboard polish (see Phase 5)
+- Difficulty tiers + filter (easy/medium/hard)
+- Flashcards mode (`/flashcards`): flip/review, mastery tracking
+- Missions: daily/weekly study goals (`src/components/Missions.tsx`)
+- Progress page (`/progress`): Exam Readiness Score, daily/weekly goals,
+  readiness checklist, and study streaks
+- Shared client-side progress store (`src/lib/progress.ts`, localStorage +
+  `useSyncExternalStore`) tracking flashcards, daily activity, "gotchas"
+  studied, and lifetime quiz runs
+- The quiz auto-completes the "1 run" daily goal via `recordQuizCompleted`,
+  and each revealed explanation is recorded as a "gotcha studied"
 
 Explicitly out of scope — do NOT add:
 
