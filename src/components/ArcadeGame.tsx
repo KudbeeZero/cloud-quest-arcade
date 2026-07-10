@@ -99,18 +99,7 @@ export default function ArcadeGame() {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [questionStart, setQuestionStart] = useState(0);
-  const [bestScore, setBestScore] = useState(() => {
-    try {
-      const saved = localStorage.getItem("arcade_bestScore");
-      if (saved !== null) {
-        const parsed = parseInt(saved, 10);
-        if (!Number.isNaN(parsed)) return parsed;
-      }
-    } catch {
-      // localStorage may be unavailable in some environments
-    }
-    return 0;
-  });
+  const [bestScore, setBestScore] = useState(0);
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
 
@@ -140,6 +129,20 @@ export default function ArcadeGame() {
       filteredQuestions.filter((q) => ids.has(q.id)).map((q) => q.domain),
     );
   }, [answers, filteredQuestions]);
+
+  // Load persisted best score after mount so SSR and client markup match.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time client load from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("arcade_bestScore");
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!Number.isNaN(parsed)) setBestScore(parsed);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     try {
