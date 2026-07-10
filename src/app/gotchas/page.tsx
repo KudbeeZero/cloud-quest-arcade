@@ -69,6 +69,66 @@ const GOTCHAS: Gotcha[] = [
     trap: "Expecting a Technical Account Manager (TAM) on the Business plan.",
     why: "A designated TAM is an Enterprise (and Enterprise On-Ramp) benefit. Basic, Developer, and Business plans do not include a TAM. The support-plan tiers and their features are heavily tested.",
   },
+  {
+    id: "g11",
+    domain: "Cloud Concepts",
+    trap: "Treating high availability and fault tolerance as interchangeable.",
+    why: "High availability minimizes downtime through redundancy and fast recovery. Fault tolerance goes further: the system continues operating without interruption even when a component fails. The exam often asks which design survives a failure with zero downtime — that is fault tolerance.",
+  },
+  {
+    id: "g12",
+    domain: "Cloud Concepts",
+    trap: "Assuming the AWS Free Tier has no usage limits.",
+    why: "The Free Tier is always free for 12 months for new accounts, or always-free for specific services, but each offer has concrete limits (e.g., 750 hours of t2/t3.micro per month, 5 GB of S3 standard storage). Exceeding those limits incurs normal charges.",
+  },
+  {
+    id: "g13",
+    domain: "Security and Compliance",
+    trap: "Picking Security Group when the question really asks about subnet-level rules.",
+    why: "Security Groups are stateful and operate at the instance (ENI) level. Network ACLs are stateless and operate at the subnet level. If the scenario needs to allow or deny traffic for an entire subnet, the answer is NACL, not Security Group.",
+  },
+  {
+    id: "g14",
+    domain: "Security and Compliance",
+    trap: "Using the AWS account root user for daily administration.",
+    why: "The root user has unrestricted access and should be used only for a small set of tasks (e.g., changing account settings, closing the account). Create IAM users or roles with least privilege for daily work, and enable MFA on the root account.",
+  },
+  {
+    id: "g15",
+    domain: "Security and Compliance",
+    trap: "Thinking AWS KMS only encrypts data at rest.",
+    why: "KMS is a key management service. It can generate and control keys used for both server-side and client-side encryption, envelope encryption, and integration with many AWS services. KMS itself does not store your data; it stores and protects the keys used to encrypt it.",
+  },
+  {
+    id: "g16",
+    domain: "Cloud Technology and Services",
+    trap: "Choosing S3 Standard for data accessed once per quarter.",
+    why: "S3 Standard is for frequently accessed data. For infrequently accessed data, S3 Standard-IA or S3 One Zone-IA cut cost in exchange for retrieval fees and minimum-duration charges. For archive data, S3 Glacier or Glacier Deep Archive are cheaper still. Match the access pattern to the storage class.",
+  },
+  {
+    id: "g17",
+    domain: "Cloud Technology and Services",
+    trap: "Expecting Amazon RDS to automatically scale read traffic horizontally.",
+    why: "A single RDS instance handles both reads and writes. To scale reads horizontally, create read replicas. RDS does not auto-provision read replicas; you must create and manage them explicitly. For automatic scaling, Aurora Serverless is the closer fit.",
+  },
+  {
+    id: "g18",
+    domain: "Cloud Technology and Services",
+    trap: "Confusing SNS, SQS, and EventBridge for the same use case.",
+    why: "SNS is a pub/sub notification service that pushes messages to subscribers. SQS is a managed message queue that consumers poll. EventBridge is a serverless event bus that routes events based on rules and schedules. Pick SNS for fan-out notifications, SQS for decoupling and buffering, EventBridge for event routing.",
+  },
+  {
+    id: "g19",
+    domain: "Billing, Pricing and Support",
+    trap: "Believing AWS Budgets can automatically stop resources when a limit is exceeded.",
+    why: "AWS Budgets tracks spend and sends alerts, but it does not shut down resources. To take automated action, you need AWS Cost Anomaly Detection alerts plus custom automation, or service-specific controls. Do not pick Budgets when the requirement is to stop a resource.",
+  },
+  {
+    id: "g20",
+    domain: "Billing, Pricing and Support",
+    trap: "Assuming consolidated billing in AWS Organizations gives automatic volume discounts.",
+    why: "Consolidated billing rolls up usage from all member accounts so the organization can reach volume pricing tiers faster, but the discount is not automatic for every service. Some benefits like Reserved Instance/Savings Plan discounts can be shared across accounts, but you still have to purchase them.",
+  },
 ];
 
 export default function GotchasPage() {

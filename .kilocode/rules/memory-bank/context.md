@@ -55,12 +55,12 @@ deduped home page discovery grid.
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
       can pass pre-computed values. Full-size gauge on `/progress`, compact
       `Link` teaser on the home page discovery grid.
-- [x] **Lightning AI Study Agent** (`agents/study_agent.py`): self-contained
-      Python stub for generating CLF-C02 multiple-choice questions. Supports an
-      OpenAI-compatible endpoint (DeepSeek by default) with env vars
-      `STUDY_AGENT_API_KEY`, `STUDY_AGENT_BASE_URL`, `STUDY_AGENT_MODEL`.
-      Falls back to a stub payload when no key is set. Includes `agents/README.md`
-      with setup and usage notes.
+- [x] **Gotchas page** (`src/app/gotchas/page.tsx`): expanded from 10 to 20
+      high-quality CLF-C02 exam traps, covering HA vs fault tolerance, Free
+      Tier limits, Security Groups vs NACLs, root user usage, KMS scope, S3
+      storage classes, RDS read scaling, SNS/SQS/EventBridge distinctions,
+      AWS Budgets behavior, and consolidated billing. Kept in existing
+      expandable `<details>` format.
 - [x] **Agent API route** (`src/app/api/agents/study/route.ts`): dashboard-facing
       stub that returns the same question shape as `agents/study_agent.py` so
       the UI can be exercised without runtime Python.
@@ -88,7 +88,7 @@ deduped home page discovery grid.
 | `src/app/admin/page.tsx` | PIN-protected admin console | ✅ Ready |
 | `src/app/flashcards/page.tsx` | Flip flashcards | ✅ Ready |
 | `src/app/missions/page.tsx` | Daily goals | ✅ Ready |
-| `src/app/gotchas/page.tsx` | Exam trap scenarios | ✅ Ready |
+| `src/app/gotchas/page.tsx` | 20 CLF-C02 exam trap gotchas in expandable cards | ✅ Updated |
 | `src/app/progress/page.tsx` | Daily goals, readiness, streaks | ✅ New |
 | `src/app/leaderboard/page.tsx` | Local top scores + share | ✅ Ready |
 | `src/app/layout.tsx` | Root layout: nav, footer, manifest, SW | ✅ Updated |
@@ -151,6 +151,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Wired Dashboard "Generate New Gotchas" button to DeepSeek via `/api/deepseek/gotchas`; displays returned gotchas; typecheck/lint/build all pass |
 | 2026-07-10 | Added `src/lib/streak.ts` blockchain hook stub, integrated into `/progress` and `/dashboard`; typecheck/lint/build all pass |
 | 2026-07-10 | Added Lightning AI Study Agent stub (`agents/study_agent.py`), dashboard API route, and "Run Lightning AI Agent" button; typecheck/lint/build all pass |
+| 2026-07-10 | Expanded `/gotchas` page from 10 to 20 high-quality CLF-C02 exam traps; typecheck/lint/build all pass |
 
 ## Constraints
 
