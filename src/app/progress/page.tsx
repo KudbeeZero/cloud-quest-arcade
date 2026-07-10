@@ -7,6 +7,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import ReadinessScore from "@/components/ReadinessScore";
 import {
   computeLongestStreak,
   computeStreak,
@@ -140,6 +141,10 @@ export default function ProgressPage() {
         <MiniStat label="Best streak" value={`${bestStreak}🔥`} />
         <MiniStat label="Exam readiness" value={`${readinessPct}%`} />
       </section>
+
+      <Card title="Exam Readiness Score" accent="cyan">
+        <ReadinessScore />
+      </Card>
 
       <Card title="Cert Progress" accent="fuchsia">
         <ProgressBar value={certPct} sublabel={`${certPct}% to exam-ready`} />

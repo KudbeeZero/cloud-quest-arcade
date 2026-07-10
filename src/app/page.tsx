@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ArcadeGame from "@/components/ArcadeGame";
+import ReadinessScore from "@/components/ReadinessScore";
 import StreakCounter from "@/components/StreakCounter";
 
 const DISCOVERY = [
@@ -53,6 +54,7 @@ export default function Home() {
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <StreakCounter />
+        <ReadinessScore compact />
         {DISCOVERY.map((card) => (
           <Link
             key={card.href}

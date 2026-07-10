@@ -41,6 +41,12 @@ deduped home page discovery grid.
       study-rhythm goal (auto-detected via `cq_dailyGoal` + `arcade_lastRunDate`)
       with a deep-link to tune it. Day/week boundaries captured on mount to
       stay SSR-safe.
+- [x] **Exam Readiness Score** (`src/components/ReadinessScore.tsx`): blended
+      0–100 gauge from 12-topic checklist (50%), rolling run accuracy (30%),
+      7-day study streak (15%), and run-volume bonus (5%). Renders a
+      cyan→violet→fuchsia SVG ring. Full size on `/progress`, compact
+      `Link` teaser added to the home-page discovery grid (links back to
+      `/progress`). `useReadiness()` hook is exported for reuse.
 - [x] **Study rhythm features** on `/progress`: daily goal tracker (3 presets,
       auto-credit when a run is logged), consecutive-day streak, 12-topic
       "Exam Readiness" checklist, blended "Cert Progress" bar. State in localStorage
@@ -74,8 +80,8 @@ deduped home page discovery grid.
 | `src/components/ContentShell.tsx` | Page chrome wrapper | ✅ Ready |
 | `src/components/Prose.tsx` | Long-form text wrapper | ✅ Ready |
 | `src/components/ServiceWorkerRegister.tsx` | SW registration (prod) | ✅ New |
-| `src/components/ReadinessScore.tsx` | Exam readiness visualization | ✅ Ready |
-| `src/components/ExamReadinessChecklist.tsx` | Milestone checklist | ✅ Ready |
+| `src/components/ReadinessScore.tsx` | Blended 0-100 exam-readiness gauge (full + compact) | ✅ New |
+| `src/components/ReadinessScore.tsx` (exported `useReadiness`, `computeReadiness`) | Reusable readiness hook + pure scoring fn | ✅ New |
 | `src/components/StudyTips.tsx` | Contextual study advice | ✅ Ready |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
@@ -114,6 +120,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Consolidated feature branches into `main`; added daily streak counter to home page |
 | 2026-07-10 | Final PWA polish: confirmed retro-arcade icons, deduped home page discovery cards, validated typecheck/lint/build all pass |
 | 2026-07-10 | Missions Hub: added weekly missions + study-rhythm tie-in to `/missions`; typecheck/lint/build all pass |
+| 2026-07-10 | Added `ReadinessScore` component (full + compact teaser), wired into `/progress` and home; typecheck/lint/build all pass |
 
 ## Constraints
 
