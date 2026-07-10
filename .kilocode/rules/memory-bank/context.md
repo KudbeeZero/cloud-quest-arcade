@@ -20,6 +20,7 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] PWA support: manifest, service worker, offline fallback, installable app shell
 
 ## Current Structure
 
@@ -33,6 +34,11 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
 | `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
+| `src/components/ServiceWorkerRegister.tsx` | Client SW registration | ✅ Ready |
+| `public/manifest.json` | PWA manifest | ✅ Ready |
+| `public/sw.js` | Service worker (app-shell caching) | ✅ Ready |
+| `public/offline.html` | Offline fallback page | ✅ Ready |
+| `public/icon.svg`, `public/icon-maskable.svg` | PWA icons (SVG) | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
@@ -54,6 +60,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | Added PWA support: manifest, SW app-shell caching, offline fallback page, installable icon set |
 
 ## Constraints
 

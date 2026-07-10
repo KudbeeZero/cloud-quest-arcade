@@ -1,0 +1,26 @@
+{
+  "name": "Cloud Quest Arcade",
+  "short_name": "Cloud Quest",
+  "description": "A retro-flavored practice arcade for the AWS Certified Cloud Practitioner (CLF-C02) exam.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#171717",
+  "theme_color": "#0e7490",
+  "categories": ["education", "games"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
