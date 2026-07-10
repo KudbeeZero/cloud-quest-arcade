@@ -102,7 +102,7 @@ export default function StudyDashboard() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3" role="region" aria-label="Study stats">
         <StatCard
           label="Exam Readiness"
           value={readinessLoaded ? `${score}%` : "…"}
@@ -123,18 +123,23 @@ export default function StudyDashboard() {
         />
       </div>
 
-      <section>
+      <section aria-label="Quick links">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-300">
           Quick Links
         </p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div
+          className="grid gap-3 sm:grid-cols-3"
+          role="list"
+        >
           {QUICK_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-cyan-400/50 hover:bg-white/10"
+              role="listitem"
+              aria-label={`Open ${link.title}: ${link.desc}`}
+              className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-cyan-400/50 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
             >
-              <span className="text-2xl">{link.icon}</span>
+              <span aria-hidden className="text-2xl">{link.icon}</span>
               <p className="mt-2 text-sm font-bold text-white">{link.title}</p>
               <p className="text-xs text-neutral-400">{link.desc}</p>
             </Link>
@@ -157,7 +162,9 @@ export default function StudyDashboard() {
           <button
             onClick={() => commitStreak(streak)}
             disabled={chainLoading || committedToday}
-            className="mt-2 rounded-xl bg-gradient-to-r from-fuchsia-400 to-violet-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 sm:mt-0"
+            aria-busy={chainLoading}
+            aria-label={committedToday ? "Streak already anchored today" : "Anchor streak on-chain"}
+            className="mt-2 rounded-xl bg-gradient-to-r from-fuchsia-400 to-violet-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60 sm:mt-0"
           >
             {chainLoading ? "Committing…" : committedToday ? "Anchored" : "Anchor Streak"}
           </button>
@@ -171,12 +178,16 @@ export default function StudyDashboard() {
         <button
           onClick={generateQuestions}
           disabled={loading}
-          className="mt-3 w-full rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 sm:w-auto"
+          aria-busy={loading}
+          aria-label="Generate new CLF-C02 gotchas with DeepSeek"
+          className="mt-3 w-full rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:w-auto"
         >
           {loading ? "Generating…" : "✨ Generate New Gotchas"}
         </button>
-        {message && <p className="mt-3 text-xs text-cyan-300">{message}</p>}
-        {error && <p className="mt-3 text-xs text-rose-300">{error}</p>}
+        <div aria-live="polite" aria-atomic="true">
+          {message && <p className="mt-3 text-xs text-cyan-300">{message}</p>}
+          {error && <p className="mt-3 text-xs text-rose-300">{error}</p>}
+        </div>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -186,22 +197,27 @@ export default function StudyDashboard() {
         <button
           onClick={runAgent}
           disabled={agentLoading}
-          className="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 sm:w-auto"
+          aria-busy={agentLoading}
+          aria-label="Run the Lightning AI Study Agent"
+          className="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-500 px-4 py-2 text-xs font-black text-neutral-900 transition hover:brightness-110 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 sm:w-auto"
         >
           {agentLoading ? "Running agent…" : "⚡ Run Lightning AI Agent"}
         </button>
-        {agentMessage && <p className="mt-3 text-xs text-emerald-300">{agentMessage}</p>}
+        <div aria-live="polite" aria-atomic="true">
+          {agentMessage && <p className="mt-3 text-xs text-emerald-300">{agentMessage}</p>}
+        </div>
       </div>
 
       {agentQuestions.length > 0 && (
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-3" aria-label="Generated agent questions">
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
             Agent Questions
           </p>
           {agentQuestions.map((q, i) => (
-            <div
+            <article
               key={i}
               className="rounded-2xl border border-white/10 bg-white/5 p-4"
+              aria-label={`Question ${i + 1}: ${q.domain}`}
             >
               <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
                 {q.domain}
@@ -217,13 +233,13 @@ export default function StudyDashboard() {
               <p className="mt-2 text-xs text-emerald-300">
                 Correct: {q.correct} — {q.explanation}
               </p>
-            </div>
+            </article>
           ))}
         </section>
       )}
 
       {gotchas.length > 0 && (
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-3" aria-label="Generated gotchas">
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
             Generated Gotchas
           </p>
@@ -232,7 +248,7 @@ export default function StudyDashboard() {
               key={g.id}
               className="group rounded-2xl border border-white/10 bg-white/5 p-4 [&_summary::-webkit-details-marker]:hidden"
             >
-              <summary className="cursor-pointer list-none">
+              <summary className="cursor-pointer list-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 rounded-xl">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
@@ -274,7 +290,11 @@ function StatCard({
         ? "text-amber-300"
         : "text-emerald-300";
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 p-4 text-center">
+    <div
+      className="rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 p-4 text-center"
+      role="status"
+      aria-label={`${label}: ${value}`}
+    >
       <p className="text-xs uppercase tracking-wide text-neutral-400">{label}</p>
       <p className={`mt-1 text-2xl font-black ${text}`}>{value}</p>
       <p className="mt-1 text-xs text-neutral-500">{hint}</p>

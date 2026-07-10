@@ -55,11 +55,11 @@ deduped home page discovery grid.
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
       can pass pre-computed values. Full-size gauge on `/progress`, compact
       `Link` teaser on the home page discovery grid.
-- [x] **Mobile bottom nav polish** (`src/components/SiteNav.tsx`): improved
-      touch targets (larger tap area, `py-3` on mobile), more prominent active
-      state with gradient background + cyan ring + active indicator dot,
-      larger icon badges, and `active:scale-95` press feedback. Kept 6-item
-      layout as 3×2 grid on mobile and single row on desktop.
+- [x] **Accessibility pass**: added `aria-label`, `role="list"`/`role="listitem"`,
+      `role="region"`, `role="status"`, `aria-busy`, and `aria-live` regions to
+      key interactive elements on the home page and dashboard. Added visible
+      `focus-visible` rings to links, buttons, and nav items so keyboard
+      navigation is clear. SiteNav already had `aria-label` and `aria-current`.
 - [x] **Agent API route** (`src/app/api/agents/study/route.ts`): dashboard-facing
       stub that returns the same question shape as `agents/study_agent.py` so
       the UI can be exercised without runtime Python.
@@ -152,6 +152,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Added Lightning AI Study Agent stub (`agents/study_agent.py`), dashboard API route, and "Run Lightning AI Agent" button; typecheck/lint/build all pass |
 | 2026-07-10 | Expanded `/gotchas` page from 10 to 20 high-quality CLF-C02 exam traps; typecheck/lint/build all pass |
 | 2026-07-10 | Polished mobile bottom nav (`SiteNav`): larger touch targets, stronger active state, press feedback; typecheck/lint/build all pass |
+| 2026-07-10 | Accessibility improvements: added aria-labels/roles/live-regions and focus-visible rings to home page, dashboard, and SiteNav; typecheck/lint/build all pass |
 
 ## Constraints
 

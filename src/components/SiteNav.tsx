@@ -35,7 +35,7 @@ export default function SiteNav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-1 flex-col items-center justify-center rounded-xl px-1 py-3 text-center transition active:scale-95 sm:min-h-0 sm:py-2 ${
+                className={`flex flex-1 flex-col items-center justify-center rounded-xl px-1 py-3 text-center transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:min-h-0 sm:py-2 ${
                   active
                     ? "bg-gradient-to-br from-cyan-500/25 to-violet-500/20 text-cyan-100 ring-1 ring-inset ring-cyan-400/30"
                     : "text-neutral-400 hover:bg-white/5 hover:text-white"
