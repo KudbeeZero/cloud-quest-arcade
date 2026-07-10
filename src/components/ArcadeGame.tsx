@@ -27,6 +27,25 @@ interface MissedItem {
 
 const LEVEL_XP = 500;
 
+/** localStorage key for question ids the player has mastered in study mode. */
+const STUDY_MASTERED_KEY = "arcade_studyMastered";
+
+/** Load the set of question ids the player has already mastered in study mode. */
+function loadMasteredStudyIds(): string[] {
+  try {
+    const saved = localStorage.getItem(STUDY_MASTERED_KEY);
+    if (saved !== null) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((id): id is string => typeof id === "string");
+      }
+    }
+  } catch {
+    // localStorage may be unavailable in some environments
+  }
+  return [];
+}
+
 type DifficultyFilter = "all" | Difficulty;
 
 const DIFFICULTY_LABEL: Record<Difficulty, { label: string; color: string }> = {
@@ -106,6 +125,10 @@ export default function ArcadeGame() {
   const [phase, setPhase] = useState<Phase>("start");
   const [order, setOrder] = useState<number[]>([]);
   const [sessionQuestions, setSessionQuestions] = useState<Question[]>([]);
+  const [isStudyRetry, setIsStudyRetry] = useState(false);
+  const [masteredStudyIds, setMasteredStudyIds] = useState<Set<string>>(
+    () => new Set(loadMasteredStudyIds()),
+  );
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [answers, setAnswers] = useState<AnsweredQuestion[]>([]);
@@ -166,6 +189,12 @@ export default function ArcadeGame() {
     [missed],
   );
 
+  /** Missed questions that are not already mastered in study mode. */
+  const retrySet = useMemo(
+    () => missedQuestions.filter((q) => !masteredStudyIds.has(q.id)),
+    [missedQuestions, masteredStudyIds],
+  );
+
   const level = Math.floor(bestScore / LEVEL_XP) + 1;
   const xpIntoLevel = bestScore % LEVEL_XP;
   const xpPct = (xpIntoLevel / LEVEL_XP) * 100;
@@ -185,9 +214,21 @@ export default function ArcadeGame() {
     }
   }, [bestScore]);
 
-  function startGame(sessionSet: Question[]) {
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STUDY_MASTERED_KEY,
+        JSON.stringify([...masteredStudyIds]),
+      );
+    } catch {
+      // ignore
+    }
+  }, [masteredStudyIds]);
+
+  function startGame(sessionSet: Question[], isRetry = false) {
     if (sessionSet.length === 0) return;
     setSessionQuestions(sessionSet);
+    setIsStudyRetry(isRetry);
     setOrder(shuffle(sessionSet.map((_, i) => i)));
     setCurrent(0);
     setSelected(null);
@@ -222,6 +263,15 @@ export default function ArcadeGame() {
   function next() {
     if (current + 1 >= order.length) {
       setBestScore((b) => Math.max(b, score));
+      if (isStudyRetry) {
+        setMasteredStudyIds((prev) => {
+          const nextSet = new Set(prev);
+          for (const a of answers) {
+            if (a.correct) nextSet.add(a.questionId);
+          }
+          return nextSet;
+        });
+      }
       setPhase("results");
       return;
     }
@@ -479,13 +529,26 @@ export default function ArcadeGame() {
             </ol>
           )}
 
-          {missed.length > 0 && (
+          {retrySet.length > 0 && (
             <button
-              onClick={() => startGame(missedQuestions)}
+              onClick={() => startGame(retrySet, true)}
               className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-amber-500/20 transition hover:brightness-110 active:scale-[0.99]"
             >
               ↻ Retry Missed Only
             </button>
+          )}
+
+          {missed.length > 0 && retrySet.length === 0 && (
+            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-center text-sm text-emerald-100">
+              All missed questions mastered in study mode. 🎉
+            </div>
+          )}
+
+          {masteredStudyIds.size > 0 && (
+            <p className="text-center text-xs text-neutral-400">
+              {masteredStudyIds.size} question
+              {masteredStudyIds.size === 1 ? "" : "s"} mastered in study mode
+            </p>
           )}
 
           <button

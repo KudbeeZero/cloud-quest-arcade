@@ -20,7 +20,8 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
-- [x] CQ-008 Study Mode V1: review missed questions + "Retry Missed Only" (PR #8)
+- [x] CQ-008 Study Mode V1: review missed questions + "Retry Missed Only" (PR #8, merged)
+- [x] CQ-009 Retry Missed keeps learned: persist mastered study ids in localStorage (`arcade_studyMastered`) and drop them from later retry sets (PR #9, in progress)
 
 ## Current Structure
 
@@ -38,14 +39,16 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 
 ## Current Focus
 
-CQ-008 Study Mode / Results Review V1 is **complete and finalized** for merge.
-PR #8 ("feat(CQ-008): study mode — review missed and retry only missed") is
-OPEN, CI GREEN, and MERGEABLE on branch `feat/study-mode-results-review`
-— awaiting owner review/merge. After a quiz, players can review missed
-questions (their answer vs correct + explanation) and retry only the missed
-set. Next lanes are ideas, not committed: timed "blitz" mode, domain progress,
-accessibility pass. Suggested next scoped lane: CQ-009 "Retry Missed — keep
-learned" (drop mastered questions from a second retry set).
+CQ-008 Study Mode (PR #8) is **merged**. After a quiz, players can review missed
+questions (their answer vs correct + explanation) and retry only the missed set.
+
+**CQ-009 "Retry Missed — keep learned" is in progress** on branch
+`feat/cq-009-retry-missed-keep-learned`, based on `main` after PR #8 merged.
+When a "Retry Missed Only" session ends, questions answered correctly are added
+to a persisted `masteredStudyIds` set (`localStorage` key `arcade_studyMastered`).
+The next "Retry Missed Only" pass filters those out so the study set shrinks.
+Scoring, HUD, bestScore/XP, and normal quizzes are unchanged. Verification
+(`pnpm typecheck/lint/build`) passes.
 
 ## Available Recipes
 
@@ -61,6 +64,7 @@ learned" (drop mastered questions from a second retry set).
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
 | 2026-07-09 | CQ-008 Study Mode: review missed questions + "Retry Missed Only" |
 | 2026-07-10 | CQ-008 finalized for merge: PR #8 open, CI green, mergeable; docs handoff updated |
+| 2026-07-10 | CQ-009 implemented: persist mastered study ids (`arcade_studyMastered`) and drop them from later "Retry Missed Only" sets; typecheck/lint/build pass |
 
 ## Constraints
 

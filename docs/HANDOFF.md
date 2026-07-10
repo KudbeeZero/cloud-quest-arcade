@@ -6,7 +6,7 @@ repository. Read it before assuming anything about the stack or scope.
 ## Current repo status
 
 - **Repo:** `KudbeeZero/cloud-quest-arcade`
-- **Live branch for active work:** `feat/study-mode-results-review`
+- **Live branch for active work:** `feat/cq-009-retry-missed-keep-learned`
 - **Package manager:** `pnpm` (lockfile: `pnpm-lock.yaml`; `bun.lock` removed)
 - **State:** Front-end only, fully client-side, no server runtime.
 
@@ -17,19 +17,24 @@ repository. Read it before assuming anything about the stack or scope.
   original questions (10/domain), difficulty tiers + scoring multipliers,
   difficulty filter/HUD/results breakdown, `/admin` demo review page, and
   `localStorage` bestScore/XP. next + eslint-config-next pinned at 16.2.6.
+- **PR #8** "feat(CQ-008): study mode — review missed and retry only missed"
+  — MERGED. After results, "Review Missed Questions" opens Study Mode (player's
+  answer + correct answer + explanation per missed question) and "Retry Missed
+  Only" starts a session using just those questions.
 
-## Active lane: CQ-008 Study Mode / Results Review V1 — READY FOR MERGE
+## Active lane: CQ-009 Retry Missed — keep learned — IN PROGRESS
 
-- **PR:** #8 "feat(CQ-008): study mode — review missed and retry only missed"
-- **State:** OPEN, **CI GREEN**, **MERGEABLE**. Awaiting owner review/merge.
-  Do not merge it from this handoff — owner action only.
-- **Branch:** `feat/study-mode-results-review`
-- **Scope (frontend only):** After results, a "Review Missed Questions" button
-  (shown only if the player missed any). Study Mode lists each missed question
-  with the player's answer, the correct answer, and the explanation, then offers
-  "Retry Missed Only" to start a new session using just those questions.
+- **PR:** #9 (target) "feat(CQ-009): retry missed keeps learned questions"
+- **State:** Implemented on `feat/cq-009-retry-missed-keep-learned`, based on
+  `main` after PR #8 merged. Awaiting owner review/merge.
+- **Scope (frontend only):** After a "Retry Missed Only" session ends, remember
+  which missed questions the player now answered correctly and persist them in
+  `localStorage` (key `arcade_studyMastered`). On the next "Retry Missed Only"
+  pass, automatically drop those mastered questions from the study set so the
+  list shrinks over time. Reuses the existing session-set engine; Study Mode and
+  normal quizzes unchanged.
 - **Out of scope:** backend/auth/DB/CMS, server progress, real exam content,
-  new question creation.
+  new question creation, changes to normal (non-study) quizzes.
 
 ## Actual stack
 
@@ -76,8 +81,11 @@ In scope (front-end only):
 - `localStorage` bestScore/XP persistence (key `arcade_bestScore`)
 - `/admin` demo review page (PIN `arcade2024`, not real auth)
 - **Study Mode (CQ-008, shipped in PR #8):** review missed questions after a
-  run, then "Retry Missed Only" to replay just those questions. PR #8 open, CI
-  green, awaiting merge.
+  run, then "Retry Missed Only" to replay just those questions.
+- **Retry Missed keeps learned (CQ-009, PR #9):** after a "Retry Missed Only"
+  pass, questions answered correctly are marked mastered and persisted in
+  `localStorage` (`arcade_studyMastered`); later "Retry Missed Only" passes drop
+  those so the study set shrinks. Scoring/HUD/bestScore/XP behavior unchanged.
 
 Explicitly out of scope — do NOT add:
 
@@ -96,10 +104,8 @@ Explicitly out of scope — do NOT add:
 3. **Timed "blitz" mode** — countdown arcade mode with survival scoring.
 4. **Domain progress** — per-domain accuracy and mastery tracking.
 5. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
-6. **CQ-009 (suggested next, frontend-only & scoped):** "Retry Missed — keep
-   learned" — after a "Retry Missed Only" pass, mark questions the player now
-   gets right so a *second* retry set drops the ones already mastered (shrinks
-   the study set). Small, reuses the existing session-set engine.
+6. **CQ-009 (IN PROGRESS, see Active lane above):** "Retry Missed — keep
+   learned" — implemented on `feat/cq-009-retry-missed-keep-learned`.
 
 ## Agent workflow notes
 
