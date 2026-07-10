@@ -10,7 +10,7 @@ import {
 } from "@/lib/scoring";
 import { now } from "@/lib/clock";
 
-type Phase = "start" | "playing" | "results";
+type Phase = "start" | "playing" | "results" | "flashcards";
 
 const LEVEL_XP = 500;
 
@@ -112,6 +112,9 @@ export default function ArcadeGame() {
   });
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
+  const [flashOrder, setFlashOrder] = useState<number[]>([]);
+  const [flipIdx, setFlipIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
 
   const filteredQuestions = useMemo(() => {
     if (difficultyFilter === "all") return questions;
@@ -120,6 +123,9 @@ export default function ArcadeGame() {
 
   const activeQuestion =
     phase === "playing" ? filteredQuestions[order[current]] : undefined;
+
+  const flashQuestion =
+    phase === "flashcards" ? filteredQuestions[flashOrder[flipIdx]] : undefined;
 
   const result = useMemo(
     () =>
@@ -157,6 +163,31 @@ export default function ArcadeGame() {
     setStreak(0);
     setQuestionStart(now());
     setPhase("playing");
+  }
+
+  function startFlashcards() {
+    setFlashOrder(shuffle(filteredQuestions.map((_, i) => i)));
+    setFlipIdx(0);
+    setFlipped(false);
+    setPhase("flashcards");
+  }
+
+  function flashPrev() {
+    if (flipIdx > 0) {
+      setFlipIdx((i) => i - 1);
+      setFlipped(false);
+    }
+  }
+
+  function flashNext() {
+    if (flipIdx + 1 < flashOrder.length) {
+      setFlipIdx((i) => i + 1);
+      setFlipped(false);
+    }
+  }
+
+  function flashHome() {
+    setPhase("start");
   }
 
   function selectOption(optionId: string) {
@@ -287,12 +318,19 @@ export default function ArcadeGame() {
             </div>
           </div>
 
-          <button
-            onClick={startGame}
-            className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
-          >
-            ▸ Start Challenge
-          </button>
+            <button
+              onClick={startFlashcards}
+              className="w-full rounded-2xl border border-violet-400/30 bg-violet-500/10 px-6 py-3 font-black text-violet-200 transition hover:border-violet-400/60 hover:bg-violet-500/20"
+            >
+              ▸ Study Flashcards
+            </button>
+
+            <button
+              onClick={startGame}
+              className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
+            >
+              ▸ Start Challenge
+            </button>
         </section>
       )}
 
@@ -443,6 +481,80 @@ export default function ArcadeGame() {
               </div>
             )}
           </div>
+        </section>
+      )}
+
+      {phase === "flashcards" && flashQuestion && (
+        <section className="flex flex-col gap-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-300">
+              Flashcards
+            </p>
+            <p className="mt-1 text-xs text-neutral-400">
+              {flipIdx + 1} of {flashOrder.length}
+            </p>
+          </div>
+
+          <button
+            onClick={() => setFlipped((f) => !f)}
+            className="relative w-full rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 p-6 text-left shadow-lg transition hover:border-white/20"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+              {flashQuestion.domain}
+            </p>
+            <h2 className="mt-3 text-base font-semibold text-white">
+              {!flipped ? flashQuestion.prompt : "Answer"}
+            </h2>
+            <p
+              className={`mt-2 text-sm transition-opacity duration-300 ${
+                flipped ? "opacity-100" : "opacity-0"
+              } text-emerald-200`}
+            >
+              {flipped && (
+                <>
+                  {
+                    flashQuestion.options.find(
+                      (o: AnswerOption) => o.id === flashQuestion.correctOptionId,
+                    )?.text
+                  }
+                  <br />
+                  <span className="text-neutral-300">
+                    {flashQuestion.explanation}
+                  </span>
+                </>
+              )}
+            </p>
+          </button>
+
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={flashPrev}
+              disabled={flipIdx === 0}
+              className="rounded-xl border border-white/10 bg-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-200 transition hover:border-white/30 disabled:opacity-40"
+            >
+              ← Prev
+            </button>
+            <button
+              onClick={() => setFlipped((f) => !f)}
+              className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-200 transition hover:border-cyan-400/60"
+            >
+              {flipped ? "Show Question" : "Reveal Answer"}
+            </button>
+            <button
+              onClick={flashNext}
+              disabled={flipIdx + 1 >= flashOrder.length}
+              className="rounded-xl border border-white/10 bg-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-200 transition hover:border-white/30 disabled:opacity-40"
+            >
+              Next →
+            </button>
+          </div>
+
+          <button
+            onClick={flashHome}
+            className="w-full rounded-2xl border border-white/10 bg-neutral-800 px-6 py-3 font-semibold text-neutral-200 transition hover:border-white/30"
+          >
+            ← Back to start
+          </button>
         </section>
       )}
 
