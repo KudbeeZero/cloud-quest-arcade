@@ -62,6 +62,9 @@ In scope (front-end only):
 - Arcade scoring: base + streak bonus + speed bonus (see `src/lib/scoring.ts`)
 - Accuracy-based rank, instant explanations
 - Mobile-first arcade rewards dashboard polish (see Phase 5)
+- **CQ-011 Domain Progress & Mastery Overview** — per-domain accuracy +
+  mastery tracking, persisted to `localStorage` (see `src/lib/progress.ts`,
+  `src/app/progress/page.tsx`, and the recording hook in `ArcadeGame.tsx`)
 
 Explicitly out of scope — do NOT add:
 
@@ -78,7 +81,7 @@ Explicitly out of scope — do NOT add:
 1. **CI / deploy preview** — wire CI to a preview deploy (e.g. Vercel preview).
 2. **Larger question bank** — more original items per domain, difficulty tiers.
 3. **Timed "blitz" mode** — countdown arcade mode with survival scoring.
-4. **Domain progress** — per-domain accuracy and mastery tracking.
+4. **Domain progress** — per-domain accuracy and mastery tracking. ✅ **DONE (CQ-011)** — see `/progress`.
 5. **Local high-score persistence** — `localStorage` best score / streak.
 6. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
 7. **Review mode** — revisit questions answered incorrectly.

@@ -8,7 +8,9 @@ import {
   pointsForAnswer,
   rankForAccuracy,
 } from "@/lib/scoring";
+import { recordRun } from "@/lib/progress";
 import { now } from "@/lib/clock";
+import Link from "next/link";
 
 type Phase = "start" | "playing" | "results";
 
@@ -182,6 +184,12 @@ export default function ArcadeGame() {
 
   function next() {
     if (current + 1 >= order.length) {
+      const run = computeRunResult(
+        answers,
+        filteredQuestions.length,
+        filteredQuestions,
+      );
+      recordRun(answers, run.bestStreak);
       setBestScore((b) => Math.max(b, score));
       setPhase("results");
       return;
@@ -293,6 +301,13 @@ export default function ArcadeGame() {
           >
             ▸ Start Challenge
           </button>
+
+          <Link
+            href="/progress"
+            className="block w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300/50"
+          >
+            ◈ View Domain Mastery
+          </Link>
         </section>
       )}
 

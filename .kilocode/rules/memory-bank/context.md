@@ -20,6 +20,8 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] **CQ-011 Domain Progress & Mastery Overview** — per-domain accuracy +
+  mastery tracking persisted to `localStorage`
 
 ## Current Structure
 
@@ -33,6 +35,8 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
 | `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
+| `src/lib/progress.ts` | Per-domain progress + mastery (CQ-011) | ✅ Ready |
+| `src/app/progress/page.tsx` | Domain Progress & Mastery Overview | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
@@ -54,6 +58,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | CQ-011: implemented `/progress` Domain Progress & Mastery Overview; added `src/lib/progress.ts`, wired recording into `ArcadeGame.tsx`, added nav link |
 
 ## Constraints
 
