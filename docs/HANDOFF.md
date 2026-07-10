@@ -18,8 +18,11 @@ repository. Read it before assuming anything about the stack or scope.
   difficulty filter/HUD/results breakdown, `/admin` demo review page, and
   `localStorage` bestScore/XP. next + eslint-config-next pinned at 16.2.6.
 
-## Active lane: CQ-008 Study Mode / Results Review V1
+## Active lane: CQ-008 Study Mode / Results Review V1 — READY FOR MERGE
 
+- **PR:** #8 "feat(CQ-008): study mode — review missed and retry only missed"
+- **State:** OPEN, **CI GREEN**, **MERGEABLE**. Awaiting owner review/merge.
+  Do not merge it from this handoff — owner action only.
 - **Branch:** `feat/study-mode-results-review`
 - **Scope (frontend only):** After results, a "Review Missed Questions" button
   (shown only if the player missed any). Study Mode lists each missed question
@@ -72,8 +75,9 @@ In scope (front-end only):
 - Difficulty filter (+ HUD label + per-difficulty results breakdown)
 - `localStorage` bestScore/XP persistence (key `arcade_bestScore`)
 - `/admin` demo review page (PIN `arcade2024`, not real auth)
-- **Study Mode (CQ-008, in progress):** review missed questions after a run,
-  then "Retry Missed Only" to replay just those questions
+- **Study Mode (CQ-008, shipped in PR #8):** review missed questions after a
+  run, then "Retry Missed Only" to replay just those questions. PR #8 open, CI
+  green, awaiting merge.
 
 Explicitly out of scope — do NOT add:
 
@@ -92,6 +96,10 @@ Explicitly out of scope — do NOT add:
 3. **Timed "blitz" mode** — countdown arcade mode with survival scoring.
 4. **Domain progress** — per-domain accuracy and mastery tracking.
 5. **Accessibility pass** — keyboard nav, screen-reader labels, focus states.
+6. **CQ-009 (suggested next, frontend-only & scoped):** "Retry Missed — keep
+   learned" — after a "Retry Missed Only" pass, mark questions the player now
+   gets right so a *second* retry set drops the ones already mastered (shrinks
+   the study set). Small, reuses the existing session-set engine.
 
 ## Agent workflow notes
 
