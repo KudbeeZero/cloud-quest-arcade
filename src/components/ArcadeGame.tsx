@@ -190,6 +190,11 @@ export default function ArcadeGame() {
       );
       recordRun(finalResult, difficultyFilter, filteredQuestions);
       setBestScore((b) => Math.max(b, score));
+      try {
+        localStorage.setItem("arcade_lastRunDate", new Date().toISOString().slice(0, 10));
+      } catch {
+        // ignore storage failures
+      }
       setPhase("results");
       return;
     }

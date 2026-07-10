@@ -37,8 +37,8 @@ const DISCOVERY = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-neutral-900 px-4 py-8 text-white sm:py-12">
-      <header className="mx-auto max-w-md text-center">
+    <main className="mx-auto max-w-3xl px-4 py-8">
+      <header className="text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
           Cloud Quest Arcade
         </p>
@@ -50,6 +50,29 @@ export default function Home() {
           Practitioner (CLF-C02) exam.
         </p>
       </header>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {DISCOVERY.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-cyan-400/50"
+          >
+            <span
+              aria-hidden
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-cyan-400/20 to-fuchsia-500/20 text-xl"
+            >
+              {card.icon}
+            </span>
+            <span>
+              <span className="block text-sm font-bold text-white">
+                {card.title}
+              </span>
+              <span className="block text-xs text-neutral-400">{card.desc}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
 
       <div className="mt-8">
         <ArcadeGame />

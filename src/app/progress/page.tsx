@@ -1,172 +1,323 @@
 "use client";
 
-import { useMemo } from "react";
-import ContentShell from "@/components/ContentShell";
-import { useProgress } from "@/lib/useProgress";
-import { domainAccuracy, clearRuns } from "@/lib/progress";
-import { DOMAIN_BADGE } from "@/lib/domains";
-import { rankForAccuracy } from "@/lib/scoring";
-import type { Domain } from "@/lib/types";
+/* eslint-disable react-hooks/set-state-in-effect */
+// The page reads persisted study state from localStorage after mount; the
+// "Loading…" guard keeps the server and first client render identical, so the
+// post-mount setState is intentional hydration, not a derived-state anti-pattern.
 
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  computeLongestStreak,
+  computeStreak,
+  GOAL_LABELS,
+  todayKey,
+  type DailyGoal,
+  type DailyGoalType,
+} from "@/lib/study";
+
+const GOAL_TYPES: DailyGoalType[] = ["run", "flashcards", "study"];
+
+const READINESS_TOPICS: { id: string; label: string; hint: string }[] = [
+  { id: "shared", label: "Shared Responsibility Model", hint: "What AWS vs. you secure" },
+  { id: "regions", label: "Regions vs. AZs vs. Edge", hint: "Global infrastructure" },
+  { id: "wellarch", label: "Well-Architected Pillars", hint: "6 pillars overview" },
+  { id: "pricing", label: "Pricing Models", hint: "On-demand, Savings Plans, Spot, Reserved" },
+  { id: "compute", label: "Compute Services", hint: "EC2, Lambda, Elastic Beanstalk" },
+  { id: "storage", label: "Storage Services", hint: "S3, EBS, Glacier, EFS" },
+  { id: "databases", label: "Database Services", hint: "RDS, DynamoDB, Aurora" },
+  { id: "network", label: "Networking & VPC", hint: "VPC, subnets, security groups, Route 53" },
+  { id: "security", label: "Security & Compliance", hint: "IAM, KMS, Shield, Artifact" },
+  { id: "monitor", label: "Monitoring & Logging", hint: "CloudWatch, CloudTrail" },
+  { id: "ha", label: "High Availability & Elasticity", hint: "Auto Scaling, Load Balancing" },
+  { id: "cost", label: "Cost Management", hint: "Cost Explorer, Budgets, Calculator" },
+];
+
+const GOAL_KEY = "cq_dailyGoal";
+const READINESS_KEY = "cq_readiness";
+const LAST_RUN_KEY = "arcade_lastRunDate";
+
+function loadJSON<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJSON(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // storage unavailable; state stays in-memory for the session
+  }
 }
 
 export default function ProgressPage() {
-  const { runs, bestScore, loaded } = useProgress();
+  const [goal, setGoal] = useState<DailyGoal>({
+    type: "run",
+    completedDates: [],
+  });
+  const [readiness, setReadiness] = useState<Record<string, boolean>>({});
+  const [hydrationDone, setHydrationDone] = useState(false);
 
-  const stats = useMemo(() => {
-    const totalQuestions = runs.reduce((n, r) => n + r.totalQuestions, 0);
-    const totalCorrect = runs.reduce((n, r) => n + r.correctCount, 0);
-    const avgAccuracy =
-      runs.length > 0
-        ? Math.round(
-            runs.reduce((n, r) => n + r.accuracy, 0) / runs.length,
-          )
-        : 0;
-    const bestStreak = runs.reduce((m, r) => Math.max(m, r.bestStreak), 0);
-    return {
-      totalQuestions,
-      totalCorrect,
-      avgAccuracy,
-      bestStreak,
-      overallAccuracy:
-        totalQuestions > 0
-          ? Math.round((totalCorrect / totalQuestions) * 100)
-          : 0,
+  // Hydrate from localStorage after mount (avoids SSR mismatch).
+  // The "Loading…" guard keeps server and first client render identical.
+  useEffect(() => {
+    setGoal(loadJSON<DailyGoal>(GOAL_KEY, { type: "run", completedDates: [] }));
+    setReadiness(loadJSON<Record<string, boolean>>(READINESS_KEY, {}));
+    setHydrationDone(true);
+  }, []);
+
+  function setGoalType(type: DailyGoalType) {
+    const updated = { ...goal, type };
+    setGoal(updated);
+    saveJSON(GOAL_KEY, updated);
+  }
+
+  function toggleTopic(id: string) {
+    const updated = { ...readiness, [id]: !readiness[id] };
+    setReadiness(updated);
+    saveJSON(READINESS_KEY, updated);
+  }
+
+  const today = todayKey();
+
+  // A "run" goal is auto-credited when the game recorded a run today.
+  const lastRun = loadJSON<string | null>(LAST_RUN_KEY, null);
+  const runDoneToday = goal.type === "run" && lastRun === today;
+
+  const doneToday = useMemo(() => {
+    if (runDoneToday) return true;
+    return goal.completedDates.includes(today);
+  }, [goal, today, runDoneToday]);
+
+  function markDoneToday() {
+    if (goal.completedDates.includes(today)) return;
+    const updated = {
+      ...goal,
+      completedDates: [...goal.completedDates, today],
     };
-  }, [runs]);
+    setGoal(updated);
+    saveJSON(GOAL_KEY, updated);
+  }
 
-  const accuracy = useMemo(() => domainAccuracy(runs), [runs]);
+  const streak = computeStreak(goal.completedDates, today);
+  const bestStreak = computeLongestStreak(goal.completedDates);
 
-  if (!loaded) {
+  const readyCount = READINESS_TOPICS.filter((t) => readiness[t.id]).length;
+  const readinessPct = Math.round(
+    (readyCount / READINESS_TOPICS.length) * 100,
+  );
+
+  // Overall cert progress blends topic readiness with study consistency.
+  const certPct = Math.round((readinessPct * 0.7 + Math.min(streak, 7) * 10 * 0.3) / 1);
+
+  if (!hydrationDone) {
     return (
-      <ContentShell eyebrow="Your Stats" title="Progress">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-neutral-300">
-          Loading progress…
-        </div>
-      </ContentShell>
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <p className="text-sm text-neutral-400">Loading your progress…</p>
+      </main>
     );
   }
 
   return (
-    <ContentShell
-      eyebrow="Your Stats"
-      title="Progress"
-      description="A snapshot of every challenge you've played, stored locally on this device."
-    >
-      <div className="flex flex-col gap-4">
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">
-            Best Score
-          </p>
-          <h2 className="mt-2 text-3xl font-black text-white">
-            {bestScore.toLocaleString()}
-          </h2>
-          <p className="mt-1 text-sm text-neutral-300">
-            {runs.length > 0
-              ? `Rank: ${rankForAccuracy(stats.overallAccuracy)} · ${runs.length} challenges played`
-              : "Play a challenge to start tracking progress."}
-          </p>
+    <main className="mx-auto max-w-3xl px-4 py-8">
+      <header className="mb-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
+          Commander Dashboard
+        </p>
+        <h1 className="mt-2 text-2xl font-black sm:text-3xl">Build Your Rhythm</h1>
+        <p className="mt-2 text-sm text-neutral-300">
+          Small daily reps add up. Track a goal, keep the streak alive, and march
+          toward the cert.
+        </p>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <MiniStat label="Daily streak" value={`${streak}🔥`} />
+        <MiniStat label="Best streak" value={`${bestStreak}🔥`} />
+        <MiniStat label="Exam readiness" value={`${readinessPct}%`} />
+      </section>
+
+      <Card title="Cert Progress" accent="fuchsia">
+        <ProgressBar value={certPct} sublabel={`${certPct}% to exam-ready`} />
+        <p className="mt-3 text-xs text-neutral-400">
+          Blends your topic coverage ({readinessPct}%) with study consistency
+          (7-day streak = full credit).
+        </p>
+      </Card>
+
+      <Card title="Daily Goal" accent="cyan">
+        <p className="mb-3 text-sm text-neutral-300">
+          Pick one focus for today. Keep it tiny so you actually ship it.
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {GOAL_TYPES.map((t) => (
+            <button
+              key={t}
+              onClick={() => setGoalType(t)}
+              className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${
+                goal.type === t
+                  ? "border-cyan-400/60 bg-cyan-400/15 text-cyan-100"
+                  : "border-white/10 bg-neutral-800 text-neutral-300 hover:border-white/30"
+              }`}
+            >
+              {GOAL_LABELS[t]}
+            </button>
+          ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Played" value={String(runs.length)} />
-          <Stat label="Questions" value={String(stats.totalQuestions)} />
-          <Stat label="Avg accuracy" value={`${stats.avgAccuracy}%`} />
-          <Stat label="Best streak" value={String(stats.bestStreak)} />
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-300">
-            Domain accuracy
-          </p>
-          <div className="space-y-3">
-            {accuracy.map((a) => (
-              <div key={a.domain}>
-                <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="text-neutral-200">
-                      <span aria-hidden className="mr-1">
-                        {DOMAIN_BADGE[a.domain as Domain]}
-                      </span>
-                      {a.domain}
-                    </span>
-                  <span className="text-neutral-400">
-                    {a.correct}/{a.total} · {a.pct}%
-                  </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-400"
-                    style={{ width: `${a.pct}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-300">
-            Run history
-          </p>
-          {runs.length === 0 ? (
-            <p className="text-sm text-neutral-400">
-              No runs yet. Finish a challenge to see it here.
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-neutral-800/60 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-white">
+              {GOAL_LABELS[goal.type]}
             </p>
+            <p className="text-xs text-neutral-400">
+              {doneToday ? "Done for today — nice work!" : "Not done yet today"}
+            </p>
+          </div>
+          {runDoneToday ? (
+            <span className="rounded-lg bg-emerald-500/20 px-3 py-2 text-xs font-bold text-emerald-200">
+              ✓ Logged
+            </span>
+          ) : doneToday ? (
+            <span className="rounded-lg bg-emerald-500/20 px-3 py-2 text-xs font-bold text-emerald-200">
+              ✓ Done
+            </span>
           ) : (
-            <ul className="space-y-2">
-              {runs.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-neutral-800/60 px-3 py-2 text-xs"
-                >
-                  <div>
-                    <p className="font-semibold text-white">
-                      {r.score.toLocaleString()} XP
-                    </p>
-                    <p className="text-neutral-400">{formatDate(r.timestamp)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-cyan-200">
-                      {r.correctCount}/{r.totalQuestions}
-                    </p>
-                    <p className="text-neutral-400">
-                      {r.difficulty === "all" ? "Mixed" : r.difficulty} ·{" "}
-                      {r.accuracy}%
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <button
+              onClick={markDoneToday}
+              className="rounded-lg bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-2 text-xs font-bold text-neutral-900 transition hover:brightness-110"
+            >
+              Mark done
+            </button>
           )}
         </div>
 
-        {runs.length > 0 && (
-          <button
-            onClick={() => clearRuns()}
-            className="w-full rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:brightness-110"
+        {goal.type === "run" && !runDoneToday && (
+          <Link
+            href="/"
+            className="mt-3 block text-center text-xs font-semibold text-cyan-300 underline-offset-2 hover:underline"
           >
-            Clear run history
-          </button>
+            ▸ Start a challenge run to auto-complete this goal
+          </Link>
         )}
-      </div>
-    </ContentShell>
+      </Card>
+
+      <Card title="Exam Readiness Checklist" accent="violet">
+        <p className="mb-3 text-sm text-neutral-300">
+          Tick off the CLF-C02 areas you feel confident explaining out loud.
+        </p>
+        <ProgressBar value={readinessPct} sublabel={`${readyCount}/${READINESS_TOPICS.length}`} />
+        <ul className="mt-4 space-y-2">
+          {READINESS_TOPICS.map((t) => {
+            const checked = !!readiness[t.id];
+            return (
+              <li key={t.id}>
+                <button
+                  role="checkbox"
+                  aria-checked={checked}
+                  onClick={() => toggleTopic(t.id)}
+                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
+                    checked
+                      ? "border-cyan-400/40 bg-cyan-400/10"
+                      : "border-white/10 bg-neutral-800/60 hover:border-white/30"
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border text-xs font-black ${
+                      checked
+                        ? "border-cyan-300 bg-cyan-400 text-neutral-900"
+                        : "border-white/20 text-transparent"
+                    }`}
+                  >
+                    ✓
+                  </span>
+                  <span className="flex-1">
+                    <span
+                      className={`block text-sm font-semibold ${
+                        checked ? "text-cyan-100" : "text-white"
+                      }`}
+                    >
+                      {t.label}
+                    </span>
+                    <span className="block text-xs text-neutral-400">{t.hint}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+
+      <p className="mt-6 text-center text-xs text-neutral-500">
+        Tip: a 15-minute rep every day beats a 5-hour cram the night before. 🎮
+      </p>
+    </main>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Card({
+  title,
+  accent,
+  children,
+}: {
+  title: string;
+  accent: "cyan" | "violet" | "fuchsia";
+  children: React.ReactNode;
+}) {
+  const accentText =
+    accent === "cyan"
+      ? "text-cyan-300"
+      : accent === "violet"
+        ? "text-violet-300"
+        : "text-fuchsia-300";
   return (
-    <div className="rounded-xl bg-neutral-800/70 p-3 text-center">
-      <dt className="text-[10px] uppercase tracking-wide text-neutral-400">
-        {label}
-      </dt>
-      <dd className="mt-1 text-lg font-bold text-white">{value}</dd>
+    <section className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+      <h2 className={`mb-3 text-xs font-semibold uppercase tracking-wide ${accentText}`}>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+      <p className="text-xs uppercase tracking-wide text-neutral-400">{label}</p>
+      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+    </div>
+  );
+}
+
+function ProgressBar({ value, sublabel }: { value: number; sublabel?: string }) {
+  const pct = Math.max(0, Math.min(100, value));
+  return (
+    <div>
+      {sublabel && (
+        <div className="mb-1 flex items-center justify-between text-xs">
+          <span className="font-semibold uppercase tracking-wide text-cyan-300">
+            Progress
+          </span>
+          <span className="text-neutral-400">{sublabel}</span>
+        </div>
+      )}
+      <div
+        className="h-3 w-full overflow-hidden rounded-full bg-neutral-800 ring-1 ring-inset ring-white/10"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
+      >
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }
