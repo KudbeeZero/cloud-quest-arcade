@@ -34,6 +34,13 @@ deduped home page discovery grid.
 - [x] **Home page polish**: removed duplicate bottom "Explore the arcade"
       section; the top grid (StreakCounter + 5 discovery cards) is now the
       single source of truth for home-page discovery.
+- [x] **Missions Hub** (`/missions`): split into **Daily Missions** (complete
+      a challenge, answer 10 Qs, 80% accuracy, practice all 4 domains) and
+      **Weekly Missions** (5 runs, 50 Qs, 7-day streak, 70% weekly accuracy)
+      powered by the progress store; surfaces the user's chosen `/progress`
+      study-rhythm goal (auto-detected via `cq_dailyGoal` + `arcade_lastRunDate`)
+      with a deep-link to tune it. Day/week boundaries captured on mount to
+      stay SSR-safe.
 - [x] **Study rhythm features** on `/progress`: daily goal tracker (3 presets,
       auto-credit when a run is logged), consecutive-day streak, 12-topic
       "Exam Readiness" checklist, blended "Cert Progress" bar. State in localStorage
@@ -61,7 +68,7 @@ deduped home page discovery grid.
 | `src/app/layout.tsx` | Root layout: nav, footer, manifest, SW | ✅ Updated |
 | `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Updated |
 | `src/components/Flashcards.tsx` | Flip-card study UI | ✅ Ready |
-| `src/components/Missions.tsx` | Daily mission logic | ✅ Ready |
+| `src/components/Missions.tsx` | Missions Hub: daily + weekly missions + rhythm-goal tie-in | ✅ Updated |
 | `src/components/SiteNav.tsx` | Global bottom nav (6 items) | ✅ Ready |
 | `src/components/SiteFooter.tsx` | Site footer | ✅ New |
 | `src/components/ContentShell.tsx` | Page chrome wrapper | ✅ Ready |
@@ -106,6 +113,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | PWA installability (icons/manifest/SW) + `/progress` study rhythm features (daily goals, streaks, readiness checklist) + SiteFooter + study helpers |
 | 2026-07-10 | Consolidated feature branches into `main`; added daily streak counter to home page |
 | 2026-07-10 | Final PWA polish: confirmed retro-arcade icons, deduped home page discovery cards, validated typecheck/lint/build all pass |
+| 2026-07-10 | Missions Hub: added weekly missions + study-rhythm tie-in to `/missions`; typecheck/lint/build all pass |
 
 ## Constraints
 
