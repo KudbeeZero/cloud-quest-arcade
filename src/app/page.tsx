@@ -2,7 +2,10 @@ import ArcadeGame from "@/components/ArcadeGame";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-neutral-900 px-4 py-8 text-white sm:py-12">
+    <main
+      id="main-content"
+      className="min-h-screen bg-neutral-900 px-4 py-8 text-white sm:py-12"
+    >
       <header className="mx-auto max-w-md text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
           Cloud Quest Arcade

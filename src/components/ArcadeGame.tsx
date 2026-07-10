@@ -89,11 +89,75 @@ function ProgressBar({
   );
 }
 
+const NAV_ITEMS = ["Home", "Missions", "Badges", "Review"] as const;
+
+/** Sticky bottom navigation with roving-tabindex keyboard support. */
+function BottomNav() {
+  const [active, setActive] = useState(0);
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLUListElement>) {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((a) => (a + 1) % NAV_ITEMS.length);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((a) => (a - 1 + NAV_ITEMS.length) % NAV_ITEMS.length);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setActive(NAV_ITEMS.length - 1);
+    }
+  }
+
+  return (
+    <nav
+      aria-label="Primary"
+      className="sticky bottom-0 mt-6 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
+    >
+      <ul
+        role="tablist"
+        aria-label="Primary navigation"
+        onKeyDown={onKeyDown}
+        className="grid grid-cols-4 gap-1"
+      >
+        {NAV_ITEMS.map((item, i) => {
+          const selected = i === active;
+          return (
+            <li key={item} role="presentation">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-current={selected ? "page" : undefined}
+                tabIndex={selected ? 0 : -1}
+                ref={(el) => {
+                  if (selected) el?.focus();
+                }}
+                onClick={() => setActive(i)}
+                className={`flex min-h-[48px] w-full items-center justify-center rounded-xl px-2 text-center text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+                  selected
+                    ? "bg-white/10 text-cyan-200"
+                    : "text-neutral-500 hover:text-neutral-200"
+                }`}
+              >
+                {item}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 export default function ArcadeGame() {
   const [phase, setPhase] = useState<Phase>("start");
   const [order, setOrder] = useState<number[]>([]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const [answers, setAnswers] = useState<AnsweredQuestion[]>([]);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -152,6 +216,7 @@ export default function ArcadeGame() {
     setOrder(shuffle(filteredQuestions.map((_, i) => i)));
     setCurrent(0);
     setSelected(null);
+    setFocusedIndex(0);
     setAnswers([]);
     setScore(0);
     setStreak(0);
@@ -188,6 +253,7 @@ export default function ArcadeGame() {
     }
     setCurrent((c) => c + 1);
     setSelected(null);
+    setFocusedIndex(0);
     setQuestionStart(now());
   }
 
@@ -393,14 +459,34 @@ export default function ArcadeGame() {
               {activeQuestion.prompt}
             </h2>
 
-            <ul className="mt-4 space-y-2">
-              {activeQuestion.options.map((opt: AnswerOption) => {
+            <ul
+              role="radiogroup"
+              aria-label="Answer options"
+              className="mt-4 space-y-2"
+              onKeyDown={(e) => {
+                const count = activeQuestion.options.length;
+                if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                  e.preventDefault();
+                  setFocusedIndex((i) => (i + 1) % count);
+                } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  setFocusedIndex((i) => (i - 1 + count) % count);
+                } else if (e.key === "Home") {
+                  e.preventDefault();
+                  setFocusedIndex(0);
+                } else if (e.key === "End") {
+                  e.preventDefault();
+                  setFocusedIndex(count - 1);
+                }
+              }}
+            >
+              {activeQuestion.options.map((opt: AnswerOption, idx) => {
                 const isCorrect = opt.id === activeQuestion.correctOptionId;
                 const isChosen = opt.id === selected;
                 const answered = selected !== null;
 
                 let cls =
-                  "w-full rounded-xl border px-4 py-3 text-left text-sm transition ";
+                  "w-full min-h-[48px] rounded-xl border px-4 py-3 text-left text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ";
                 if (!answered) {
                   cls +=
                     "border-white/10 bg-neutral-800 text-neutral-100 hover:border-cyan-300/60";
@@ -413,8 +499,16 @@ export default function ArcadeGame() {
                 }
 
                 return (
-                  <li key={opt.id}>
+                  <li key={opt.id} role="presentation">
                     <button
+                      type="button"
+                      role="radio"
+                      aria-checked={isChosen}
+                      tabIndex={idx === focusedIndex ? 0 : -1}
+                      ref={(el) => {
+                        if (idx === focusedIndex && !answered)
+                          el?.focus();
+                      }}
                       className={cls}
                       onClick={() => selectOption(opt.id)}
                       disabled={answered}
@@ -427,7 +521,7 @@ export default function ArcadeGame() {
             </ul>
 
             {selected !== null && (
-              <div className="mt-4 rounded-xl bg-neutral-800/70 p-4 text-sm text-neutral-200">
+              <div className="mt-4 rounded-xl bg-neutral-800/70 p-4 text-sm text-neutral-200" aria-live="polite">
                 <p className="font-semibold text-white">
                   {selected === activeQuestion.correctOptionId
                     ? "Correct! ✓"
@@ -446,24 +540,7 @@ export default function ArcadeGame() {
         </section>
       )}
 
-      <nav
-        aria-label="Primary"
-        className="sticky bottom-0 mt-6 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-neutral-900/90 p-2 backdrop-blur"
-      >
-        {(["Home", "Missions", "Badges", "Review"] as const).map((item, i) => (
-          <span
-            key={item}
-            aria-current={i === 0 ? "page" : undefined}
-            className={`rounded-xl py-2 text-center text-xs font-semibold ${
-              i === 0
-                ? "bg-white/10 text-cyan-200"
-                : "text-neutral-500"
-            }`}
-          >
-            {item}
-          </span>
-        ))}
-      </nav>
+      <BottomNav />
     </div>
   );
 }
