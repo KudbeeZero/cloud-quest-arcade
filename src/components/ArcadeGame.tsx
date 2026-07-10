@@ -9,6 +9,7 @@ import {
   rankForAccuracy,
 } from "@/lib/scoring";
 import { now } from "@/lib/clock";
+import { recordQuizCompleted } from "@/lib/progress";
 
 type Phase = "start" | "playing" | "results";
 
@@ -183,6 +184,12 @@ export default function ArcadeGame() {
   function next() {
     if (current + 1 >= order.length) {
       setBestScore((b) => Math.max(b, score));
+      const runResult = computeRunResult(
+        answers,
+        filteredQuestions.length,
+        filteredQuestions,
+      );
+      recordQuizCompleted(runResult.accuracy);
       setPhase("results");
       return;
     }

@@ -6,20 +6,26 @@ repository. Read it before assuming anything about the stack or scope.
 ## Current repo status
 
 - **Repo:** `KudbeeZero/cloud-quest-arcade`
-- **Live branch for active work:** `feat/arcade-learning-foundation`
 - **Package manager:** `pnpm` (lockfile: `pnpm-lock.yaml`; `bun.lock` removed)
 - **State:** Front-end only, fully client-side, no server runtime.
+- **`main` HEAD:** CQ-007 — 40 questions, difficulty tiers, admin panel, localStorage best-score/XP.
 
-## PR #1 status
+### Lane / PR history (as of 2026-07-10)
 
-- **PR:** #1 "feat: create arcade AWS practitioner trainer foundation"
-- **State:** OPEN
-- **Base:** `main` ← **Head:** `feat/arcade-learning-foundation`
-- **Mergeable:** yes (verify with `gh pr view 1` before pushing)
-- **CI:** GitHub Actions added (`.github/workflows/ci.yml`)
-- **Dependabot:** enabled (`.github/dependabot.yml`, weekly, npm, minor/patch grouped)
+| Lane | PR | Status | Notes |
+|------|----|--------|-------|
+| CQ-001 foundation | #1 | merged | base template |
+| CQ-007 question bank + admin | #7 | merged | current `main` |
+| CQ-008 Study Mode | #8 | OPEN (not merged) | branch `feat/study-mode-results-review` |
+| CQ-009 Retry Missed / keep learned | #9 | OPEN (not merged) | branch `feat/cq-009-retry-missed-keep-learned` |
+| CQ-006 Player Progress | #6 | OPEN (not merged) | branch `feat/player-progress-v1` |
+| **CQ-010 Flashcards & Missions V1** | (this lane) | branch `feat/cq-010-flashcards-missions` | built on `main` (CQ-007) — see note below |
 
-> All changes for this lane land on PR #1 only. Do NOT open a second PR.
+> **CQ-010 build note:** The CQ-010 brief assumed PR #8 (Study Mode) and
+> PR #9 (Retry Missed) were merged into `main` before this lane started.
+> At implementation time they were still OPEN, so CQ-010 was branched from
+> `main` at CQ-007 and does NOT depend on Study Mode / Retry Missed. When
+> those PRs merge, CQ-010 features remain additive and compatible.
 
 ## Actual stack
 
@@ -58,10 +64,33 @@ Reference docs:
 In scope (front-end only):
 
 - Quiz loop: start → play → results → replay
-- Original sample questions (12) across the four CLF-C02 domains
+- Original sample questions (40, 10 per domain) across the four CLF-C02 domains
 - Arcade scoring: base + streak bonus + speed bonus (see `src/lib/scoring.ts`)
 - Accuracy-based rank, instant explanations
-- Mobile-first arcade rewards dashboard polish (see Phase 5)
+- Difficulty tiers (easy/medium/hard) + difficulty filter on start screen
+- localStorage persistence for bestScore/XP
+- **Flashcards (CQ-010):** active-recall flip cards reusing the question bank;
+  "Know it" / "Still learning" rating; per-card mastery tracked in localStorage.
+- **Missions (CQ-010):** daily + weekly goals (quiz, flashcard review, mastery,
+  accuracy) tracked in localStorage; progress indicator in the top bar.
+
+### CQ-010 — Learning Missions & Flashcards V1
+
+- **Branch:** `feat/cq-010-flashcards-missions` (from `main` / CQ-007)
+- **Mode switcher:** `src/app/page.tsx` now switches between Quiz / Flashcards /
+  Missions and shows a compact Daily/Weekly mission indicator under the title.
+- **New files:**
+  - `src/lib/progress.ts` — `localStorage` store (flashcard mastery + daily/weekly
+    activity) with a `useProgress()` hook and cross-component sync via a custom event.
+  - `src/components/Flashcards.tsx` — flip-card UI; writes mastery + review counts.
+  - `src/components/Missions.tsx` — daily/weekly mission lists with progress bars.
+- **Touched (additive, non-behavioral):** `src/components/ArcadeGame.tsx` now calls
+  `recordQuizCompleted(accuracy)` once when a run finishes (no UI/logic change).
+- **Out of scope for CQ-010:** spaced-repetition algorithm, real notifications/
+  streaks, question-creation UI, core quiz-engine changes.
+- **Verification:** `pnpm run typecheck && pnpm run lint && pnpm run build` all pass.
+- **Owner action:** update the FigJam board (`FWgyTpkA1K7HD5VBcx4aH`) — new CQ-010
+  lane status + merge owner. No code action needed.
 
 Explicitly out of scope — do NOT add:
 

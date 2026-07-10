@@ -20,27 +20,37 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 - [x] Difficulty filter on start screen and difficulty breakdown on results
 - [x] Lightweight client-side admin panel at /admin (PIN-protected, no backend/DB)
 - [x] localStorage persistence for bestScore/XP across sessions
+- [x] **CQ-010 Flashcards:** flip-card active recall reusing the 40-question bank, "Know it"/"Still learning" rating, per-card mastery in localStorage
+- [x] **CQ-010 Missions:** daily + weekly goals (quiz / flashcard review / mastery / accuracy) tracked in localStorage with a top-bar progress indicator
+- [x] **CQ-010 `src/lib/progress.ts`:** shared `localStorage` store + `useProgress()` hook for flashcard mastery and daily/weekly activity
+
+> **Note:** The CQ-010 brief assumed PR #8 (Study Mode) and PR #9 (Retry Missed)
+> were merged before this lane. They were still OPEN, so CQ-010 branched from
+> `main` at CQ-007 and is fully additive/compatible.
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Home page | ✅ Ready |
+| `src/app/page.tsx` | Home page + Quiz/Flashcards/Missions mode switcher | ✅ CQ-010 updated |
 | `src/app/admin/page.tsx` | Client-side admin console | ✅ Ready |
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
-| `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Ready |
+| `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Ready (additive `recordQuizCompleted` hook) |
+| `src/components/Flashcards.tsx` | CQ-010 flip-card UI | ✅ New |
+| `src/components/Missions.tsx` | CQ-010 daily/weekly missions | ✅ New |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
 | `src/lib/scoring.ts` | Scoring + difficulty multipliers | ✅ Ready |
+| `src/lib/progress.ts` | CQ-010 localStorage progress store | ✅ New |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Current Focus
 
-The app is functional with 40 questions and difficulty tiers. Next steps depend on user requirements:
-1. More question expansions
-2. Additional admin features
-3. Further UI/UX refinements
+CQ-010 (Flashcards + Missions) is implemented and verified (typecheck/lint/build
+all pass) on branch `feat/cq-010-flashcards-missions`. All prior quiz/study/admin
+functionality is untouched. Awaiting owner merge of PRs #8/#9 before this lane's
+own PR is opened if coordination is desired.
 
 ## Available Recipes
 
@@ -54,10 +64,12 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | CQ-010: added Flashcards + Missions (V1) with localStorage progress store, top-bar indicator, and Quiz/Flashcards/Missions mode switcher |
 
 ## Constraints
 
-- Minimal dependencies by default
+- Minimal dependencies by default (no new deps added in CQ-010)
 - Framework: Next.js 16 + React 19 + Tailwind CSS 4
 - Package manager: pnpm (repo default) / bun (agent default)
 - Deploy target: OpenNext (AWS)
+- CQ-010: frontend-only, no backend/auth/database; additive to existing quiz engine
