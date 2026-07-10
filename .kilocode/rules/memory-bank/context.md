@@ -2,13 +2,14 @@
 
 ## Current State
 
-**Status**: ✅ Full-featured exam trainer with PWA support.
+**Status**: ✅ Full-featured exam trainer with PWA installability + final polish.
 
 Fully client-side (no backend/DB). Includes 40-question bank with difficulty tiers,
-PWA installability (manifest + icons + service worker), study rhythm features on
-`/progress` (daily goals, streaks, exam-readiness checklist), plus multi-page app
-with Flashcards, Missions, Gotchas, Leaderboard, shared SiteNav/SiteFooter, and
-run-history progress store.
+PWA installability (manifest + 192/512 PNG icons in retro arcade style + service
+worker), study rhythm features on `/progress` (daily goals, streaks, exam-
+readiness checklist), plus multi-page app with Flashcards, Missions, Gotchas,
+Leaderboard, shared SiteNav/SiteFooter, run-history progress store, and a
+deduped home page discovery grid.
 
 > **Working Notes for future agents**: Build new features against the *actual*
 > files below. The app is a multi-page arcade trainer with 40 questions (not 72
@@ -22,9 +23,17 @@ run-history progress store.
 - [x] Memory bank + recipe system
 - [x] 40-question bank (10/domain), difficulty tiers, scoring multipliers
 - [x] PIN-protected `/admin` console, localStorage best-score/XP persistence
-- [x] **PWA installability**: `public/manifest.json`, generated `public/icon-192x192.png`
-      + `public/icon-512x512.png`, `public/sw.js`, `ServiceWorkerRegister` (prod-only),
-      manifest/theme-color/apple-touch linked in `layout.tsx`.
+- [x] **PWA installability**: `public/manifest.json` (standalone, portrait,
+      192 + 512 PNG icons including a maskable variant), generated retro-arcade
+      `public/icon-192x192.png` + `public/icon-512x512.png` (navy bg, magenta
+      pixel border, yellow "CQ" glyphs) via `scripts/gen-icons.mjs`, `public/sw.js`
+      (network-first navigations, cache-first static assets, app-shell precache),
+      `ServiceWorkerRegister` (prod-only), manifest/theme-color/apple-touch linked
+      in `layout.tsx`. Build, typecheck, and lint all green — PWA is fully
+      installable.
+- [x] **Home page polish**: removed duplicate bottom "Explore the arcade"
+      section; the top grid (StreakCounter + 5 discovery cards) is now the
+      single source of truth for home-page discovery.
 - [x] **Study rhythm features** on `/progress`: daily goal tracker (3 presets,
       auto-credit when a run is logged), consecutive-day streak, 12-topic
       "Exam Readiness" checklist, blended "Cert Progress" bar. State in localStorage
@@ -96,6 +105,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Added Flashcards, Missions, Gotchas, Progress, Leaderboard pages; shared SiteNav/ContentShell/Prose shell; run-history progress store wired into ArcadeGame |
 | 2026-07-10 | PWA installability (icons/manifest/SW) + `/progress` study rhythm features (daily goals, streaks, readiness checklist) + SiteFooter + study helpers |
 | 2026-07-10 | Consolidated feature branches into `main`; added daily streak counter to home page |
+| 2026-07-10 | Final PWA polish: confirmed retro-arcade icons, deduped home page discovery cards, validated typecheck/lint/build all pass |
 
 ## Constraints
 
