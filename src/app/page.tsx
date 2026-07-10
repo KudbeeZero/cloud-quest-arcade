@@ -54,7 +54,6 @@ export default function Home() {
 
       <div
         className="mt-6 grid gap-3 sm:grid-cols-2"
-        role="list"
         aria-label="Study sections"
       >
         <StreakCounter />
@@ -63,7 +62,6 @@ export default function Home() {
           <Link
             key={card.href}
             href={card.href}
-            role="listitem"
             aria-label={`Open ${card.title}: ${card.desc}`}
             className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-cyan-400/50 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
           >

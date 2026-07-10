@@ -55,11 +55,14 @@ deduped home page discovery grid.
       `READINESS_TOPICS`, `computeReadinessScore`, and a `state` prop so callers
       can pass pre-computed values. Full-size gauge on `/progress`, compact
       `Link` teaser on the home page discovery grid.
-- [x] **Accessibility pass**: added `aria-label`, `role="list"`/`role="listitem"`,
-      `role="region"`, `role="status"`, `aria-busy`, and `aria-live` regions to
-      key interactive elements on the home page and dashboard. Added visible
-      `focus-visible` rings to links, buttons, and nav items so keyboard
-      navigation is clear. SiteNav already had `aria-label` and `aria-current`.
+- [x] **Homepage loading fix**: removed invalid `role="list"` / `role="listitem"`
+      pairing from the discovery grid (caused hydration mismatch because
+      `StreakCounter` renders a `<div>` inside the list). Fixed duplicate SVG
+      `linearGradient` ID collision in `ReadinessScore` by generating unique
+      IDs per ring with `useId`. Bumped service-worker cache version to `v2`
+      and switched static assets to stale-while-revalidate so old cached HTML
+      cannot reference missing JS chunks after a deploy. Navigations/HTML now
+      use network-first with a fallback to cached `/`.
 - [x] **Agent API route** (`src/app/api/agents/study/route.ts`): dashboard-facing
       stub that returns the same question shape as `agents/study_agent.py` so
       the UI can be exercised without runtime Python.
@@ -116,8 +119,8 @@ deduped home page discovery grid.
 | `agents/README.md` | Study agent setup and usage notes | ✅ New |
 | `src/app/api/agents/study/route.ts` | Dashboard-facing stub for the Lightning AI Study Agent | ✅ New |
 | `src/lib/streak.ts` | Streak blockchain hook stub (`useStreakChain`) for future Algorand integration | ✅ New |
-| `public/` | PWA manifest, service worker, icons | ✅ New |
-| `scripts/gen-icons.mjs` | PNG icon generator | ✅ New |
+| `public/sw.js` | Service worker: bumped to v2, network-first HTML, stale-while-revalidate static assets | ✅ Updated |
+| `src/components/ReadinessScore.tsx` | Reusable exam-readiness gauge with unique SVG gradient IDs per instance | ✅ Updated |
 | `src/components/StreakCounter.tsx` | Daily streak display for home page | ✅ New |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
@@ -153,6 +156,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Expanded `/gotchas` page from 10 to 20 high-quality CLF-C02 exam traps; typecheck/lint/build all pass |
 | 2026-07-10 | Polished mobile bottom nav (`SiteNav`): larger touch targets, stronger active state, press feedback; typecheck/lint/build all pass |
 | 2026-07-10 | Accessibility improvements: added aria-labels/roles/live-regions and focus-visible rings to home page, dashboard, and SiteNav; typecheck/lint/build all pass |
+| 2026-07-10 | Fixed homepage loading issue: removed invalid ARIA list roles causing hydration mismatch, unique SVG gradient IDs, bumped SW cache to v2 with network-first HTML; typecheck/lint/build all pass |
 
 ## Constraints
 

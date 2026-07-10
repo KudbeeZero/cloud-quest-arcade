@@ -1,12 +1,18 @@
 // Cloud Quest Arcade service worker.
 // Caches the app shell so the arcade loads instantly and works offline.
 
-const CACHE = "cloud-quest-v1";
+const CACHE_VERSION = 2;
+const CACHE = `cloud-quest-v${CACHE_VERSION}`;
 const APP_SHELL = ["/", "/manifest.json", "/icon-192x192.png", "/icon-512x512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)),
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .catch(() => {
+        // Precache failures are non-fatal; the app can still fetch from network.
+      }),
   );
   self.skipWaiting();
 });
@@ -17,9 +23,9 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
-      ),
+      )
+      .then(() => self.clients.claim()),
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -28,30 +34,39 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first for navigations so fresh content wins when online.
-  if (request.mode === "navigate") {
+  const isNavigation = request.mode === "navigate";
+  const isHtml = request.headers.get("accept")?.includes("text/html");
+
+  // Network-first for navigations and HTML pages so fresh content wins online.
+  if (isNavigation || isHtml) {
     event.respondWith(
       fetch(request)
         .then((res) => {
+          if (!res.ok) throw new Error("Navigation fetch failed");
           const copy = res.clone();
           caches.open(CACHE).then((cache) => cache.put(request, copy));
           return res;
         })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/"))),
+        .catch(() =>
+          caches.match(request).then((r) => r || caches.match("/")),
+        ),
     );
     return;
   }
 
-  // Cache-first for static assets.
+  // Stale-while-revalidate for static assets: serve cached immediately, refresh in background.
   event.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
+    caches.match(request).then((cached) => {
+      const network = fetch(request)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
           return res;
-        }),
-    ),
+        })
+        .catch(() => cached);
+      return cached || network;
+    }),
   );
 });

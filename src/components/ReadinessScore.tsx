@@ -5,7 +5,7 @@
 // so the server and client trees match, then the post-mount effect pulls the
 // real values from localStorage and triggers a single re-render.
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useProgress } from "@/lib/useProgress";
 import { computeStreak, todayKey, type DailyGoal } from "@/lib/study";
@@ -183,6 +183,7 @@ function ScoreRing({
   stroke: number;
   loaded: boolean;
 }) {
+  const gradientId = `cq-readiness-gradient-${useId().replace(/:/g, "")}`;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const display = loaded ? Math.max(0, Math.min(100, value)) : 0;
@@ -208,14 +209,14 @@ function ScoreRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="url(#cq-readiness-gradient)"
+          stroke={`url(#${gradientId})`}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${dash} ${circumference - dash}`}
           style={{ transition: "stroke-dasharray 500ms ease" }}
         />
         <defs>
-          <linearGradient id="cq-readiness-gradient" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#22d3ee" />
             <stop offset="50%" stopColor="#a78bfa" />
             <stop offset="100%" stopColor="#f472b6" />
