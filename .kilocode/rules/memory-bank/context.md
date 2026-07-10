@@ -7,6 +7,11 @@
 The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02) practice quiz app branded as a retro "arcade." It is fully client-side with no backend or database.
 
 ## Recently Completed
+- [x] PWA support: manifest.json, sw.js (app-shell + asset caching), offline.html fallback
+- [x] Retro PWA icons (icon-192x192.png, icon-512x512.png) generated via pure-Node PNG encoder
+- [x] ServiceWorkerRegister client component registering SW in production only
+- [x] Wired manifest/viewport/theme-color + SW registration into root layout
+- [x] Home page improved with discovery cards (Flashcards, Missions, Gotchas, Progress, Leaderboard)
 
 - [x] Base Next.js 16 setup with App Router
 - [x] TypeScript configuration with strict mode
@@ -27,8 +32,13 @@ The template has been expanded into an AWS Certified Cloud Practitioner (CLF-C02
 |----------------|---------|--------|
 | `src/app/page.tsx` | Home page | ✅ Ready |
 | `src/app/admin/page.tsx` | Client-side admin console | ✅ Ready |
-| `src/app/layout.tsx` | Root layout | ✅ Ready |
+| `src/app/layout.tsx` | Root layout (manifest + SW) | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
+| `src/components/ServiceWorkerRegister.tsx` | Prod-only SW registration | ✅ Ready |
+| `public/manifest.json` | PWA manifest | ✅ Ready |
+| `public/sw.js` | Service worker (caching) | ✅ Ready |
+| `public/offline.html` | Offline fallback | ✅ Ready |
+| `public/icon-192x192.png` / `icon-512x512.png` | PWA icons | ✅ Ready |
 | `src/components/ArcadeGame.tsx` | Quiz UI + game logic | ✅ Ready |
 | `src/data/questions.ts` | 40-question bank | ✅ Ready |
 | `src/lib/types.ts` | Domain types | ✅ Ready |
@@ -54,6 +64,7 @@ The app is functional with 40 questions and difficulty tiers. Next steps depend 
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-07-09 | Expanded to AWS practitioner quiz app with 40 questions, difficulty tiers, admin panel, and localStorage persistence |
+| 2026-07-10 | Added PWA support (manifest, SW, offline, icons) and improved home page with discovery cards |
 
 ## Constraints
 
