@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import questions from "@/data/questions";
 import type { AnswerOption, AnsweredQuestion, Domain, Difficulty } from "@/lib/types";
 import {
@@ -8,7 +8,13 @@ import {
   pointsForAnswer,
   rankForAccuracy,
 } from "@/lib/scoring";
-import { recordRun } from "@/lib/progress";
+import {
+  clearSavedRun,
+  recordRun,
+  saveRun,
+  type SavedRun,
+} from "@/lib/progress";
+import { useSavedRun } from "@/lib/useProgress";
 import { now } from "@/lib/clock";
 
 type Phase = "start" | "playing" | "results";
@@ -151,6 +157,17 @@ export default function ArcadeGame() {
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
 
+  // Snapshot of any in-flight saved run from a previous session/tab. We use
+  // it to show a "Resume Mission" affordance on the start screen and to
+  // rehydrate state when the player picks up where they left off.
+  const savedRun = useSavedRun();
+  // Guard against offering a resume for a saved run whose question set no
+  // longer matches the current difficulty filter — switching filters should
+  // not silently mutate an in-progress run.
+  const savedRunMatchesFilter =
+    savedRun !== null && savedRun.difficulty === difficultyFilter;
+  const resumableRun = savedRunMatchesFilter ? savedRun : null;
+
   const filteredQuestions = useMemo(() => {
     if (difficultyFilter === "all") return questions;
     return questions.filter((q) => q.difficulty === difficultyFilter);
@@ -178,7 +195,28 @@ export default function ArcadeGame() {
     );
   }, [answers, filteredQuestions]);
 
+  // Persist in-flight progress so the player can close the tab and resume
+  // from the same question. We only write while a run is actively `playing`;
+  // the slot is cleared explicitly by `startGame` (fresh run) and `next()`
+  // (run complete). We deliberately do NOT clear on mount/start, so the
+  // existing saved run stays available for the "Resume" affordance.
+  useEffect(() => {
+    if (phase !== "playing" || order.length === 0) return;
+    const snapshot: SavedRun = {
+      order,
+      current,
+      answers,
+      score,
+      streak,
+      difficulty: difficultyFilter,
+      questionStartedAt: questionStart,
+      savedAt: Date.now(),
+    };
+    saveRun(snapshot);
+  }, [phase, order, current, answers, score, streak, difficultyFilter, questionStart]);
+
   function startGame() {
+    clearSavedRun();
     setOrder(shuffle(filteredQuestions.map((_, i) => i)));
     setCurrent(0);
     setSelected(null);
@@ -187,6 +225,42 @@ export default function ArcadeGame() {
     setStreak(0);
     setQuestionStart(now());
     setPhase("playing");
+  }
+
+  function resumeGame() {
+    if (!resumableRun) return;
+    // Defensive: if the question bank has shrunk since the run was saved,
+    // clamp the current index and drop any out-of-range entries from the
+    // order. This keeps the resume from crashing on stale data.
+    const safeOrder = resumableRun.order
+      .filter((i) => i >= 0 && i < questions.length)
+      .slice(0, questions.length);
+    const safeCurrent = Math.min(
+      Math.max(0, resumableRun.current),
+      Math.max(0, safeOrder.length - 1),
+    );
+    setOrder(safeOrder);
+    setCurrent(safeCurrent);
+    setSelected(null);
+    setAnswers(resumableRun.answers);
+    setScore(resumableRun.score);
+    setStreak(resumableRun.streak);
+    setDifficultyFilter(resumableRun.difficulty);
+    // Preserve the original question start so the speed bonus doesn't reset
+    // every time the player resumes.
+    setQuestionStart(resumableRun.questionStartedAt);
+    setPhase("playing");
+  }
+
+  function discardSavedRun() {
+    clearSavedRun();
+  }
+
+  function shuffleRemaining() {
+    if (order.length === 0) return;
+    const head = order.slice(0, current + 1);
+    const tail = shuffle(order.slice(current + 1));
+    setOrder([...head, ...tail]);
   }
 
   function selectOption(optionId: string) {
@@ -219,6 +293,7 @@ export default function ArcadeGame() {
       );
       recordRun(finalResult, difficultyFilter, filteredQuestions);
       setBestScore(Math.max(readBestScore(), score));
+      clearSavedRun();
       try {
         localStorage.setItem("arcade_lastRunDate", new Date().toISOString().slice(0, 10));
       } catch {
@@ -328,11 +403,41 @@ export default function ArcadeGame() {
             </div>
           </div>
 
+          {resumableRun && (
+            <div className="rounded-2xl border border-amber-300/40 bg-amber-400/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">
+                Mission in progress
+              </p>
+              <p className="mt-1 text-sm text-amber-50">
+                Question {resumableRun.current + 1} of {resumableRun.order.length}{" "}
+                · score {resumableRun.score.toLocaleString()} · streak{" "}
+                {resumableRun.streak}
+              </p>
+              <p className="mt-1 text-[11px] text-amber-100/80">
+                Saved {new Date(resumableRun.savedAt).toLocaleString()}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  onClick={resumeGame}
+                  className="rounded-xl bg-gradient-to-r from-amber-300 to-amber-500 px-4 py-2 text-sm font-black text-neutral-900 shadow transition hover:brightness-110 active:scale-[0.99]"
+                >
+                  ▸ Resume
+                </button>
+                <button
+                  onClick={discardSavedRun}
+                  className="rounded-xl border border-amber-200/40 bg-neutral-900/50 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
+
           <button
             onClick={startGame}
             className="w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-4 text-lg font-black text-neutral-900 shadow-lg shadow-violet-500/20 transition hover:brightness-110 active:scale-[0.99]"
           >
-            ▸ Start Challenge
+            {resumableRun ? "▸ Start New Challenge" : "▸ Start Challenge"}
           </button>
         </section>
       )}
@@ -410,18 +515,27 @@ export default function ArcadeGame() {
               label="Mission progress"
               sublabel={`${current + 1} / ${order.length}`}
             />
-            <div className="mt-3 flex items-center justify-between text-xs text-neutral-300">
+            <div className="mt-3 flex items-center justify-between gap-2 text-xs text-neutral-300">
               <span>
                 Score{" "}
                 <strong className="text-amber-300">{score}</strong>
               </span>
-              <span>
+              <span className="flex items-center gap-2">
                 <span
                   className={DIFFICULTY_LABEL[activeQuestion.difficulty].color}
                 >
                   {activeQuestion.difficulty.toUpperCase()}
                 </span>{" "}
                 <strong className="text-amber-300">{streak}</strong> streak
+                <button
+                  type="button"
+                  onClick={shuffleRemaining}
+                  disabled={order.length - current - 1 < 2}
+                  title="Re-randomize the order of the remaining questions"
+                  className="ml-1 rounded-full border border-white/10 bg-neutral-800 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-200 transition hover:border-cyan-300/60 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  🔀 Shuffle
+                </button>
               </span>
             </div>
           </div>

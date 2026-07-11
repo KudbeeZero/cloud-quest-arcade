@@ -1,11 +1,13 @@
-import type { Difficulty, Domain, RunResult } from "./types";
+import type { AnsweredQuestion, Difficulty, Domain, RunResult } from "./types";
 
 /**
  * Lightweight, localStorage-backed progress store.
  *
  * The arcade only persists a single `bestScore` today. This module adds a run
  * history (used by /progress and /leaderboard) and a tiny subscription model so
- * client pages can react to changes. Everything is SSR-safe: storage access is
+ * client pages can react to changes. It also stores a single in-flight run
+ * (`arcade_savedRun`) so a mid-test session can be resumed across page loads,
+ * tab closes, or browser restarts. Everything is SSR-safe: storage access is
  * guarded and reads happen inside effects.
  */
 
@@ -24,8 +26,29 @@ export interface RunRecord {
   answers: { questionId: string; correct: boolean; domain: Domain }[];
 }
 
+/**
+ * Snapshot of an in-flight run that can be resumed later. The `order` array is
+ * a permutation of indices into the active question set, so the resume flow
+ * can reconstruct the exact same sequence even if the user changed difficulty
+ * filter in the meantime.
+ */
+export interface SavedRun {
+  order: number[];
+  current: number;
+  answers: AnsweredQuestion[];
+  score: number;
+  streak: number;
+  difficulty: RunDifficulty;
+  /** Wall-clock ms when the current question was first shown. */
+  questionStartedAt: number;
+  /** Wall-clock ms when this state was last persisted. */
+  savedAt: number;
+}
+
 const RUNS_KEY = "arcade_runs";
 const BEST_KEY = "arcade_bestScore";
+const SAVED_RUN_KEY = "arcade_savedRun";
+const SAVED_RUN_EVENT = "cq_savedRun";
 
 function storage(): Storage | null {
   try {
@@ -154,4 +177,82 @@ function notify() {
 export function subscribe(listener: Listener): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
+}
+
+// --- In-flight (mid-test) run store -----------------------------------------
+// Persists the active run so the player can close the tab and resume from the
+// same question. A single slot is kept; starting a new run overwrites it.
+
+function readSavedRunRaw(): string | null {
+  const ls = storage();
+  if (!ls) return null;
+  try {
+    return ls.getItem(SAVED_RUN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function loadSavedRun(): SavedRun | null {
+  const raw = readSavedRunRaw();
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as SavedRun;
+    if (!parsed || !Array.isArray(parsed.order) || !Array.isArray(parsed.answers)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveRun(run: SavedRun): void {
+  const ls = storage();
+  if (!ls) return;
+  try {
+    ls.setItem(SAVED_RUN_KEY, JSON.stringify(run));
+  } catch {
+    // ignore quota / unavailable storage
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SAVED_RUN_EVENT));
+  }
+}
+
+export function clearSavedRun(): void {
+  const ls = storage();
+  if (!ls) return;
+  try {
+    ls.removeItem(SAVED_RUN_KEY);
+  } catch {
+    // ignore
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SAVED_RUN_EVENT));
+  }
+}
+
+/**
+ * `useSyncExternalStore`-friendly subscription for the saved-run slot.
+ * `getSnapshot` returns the raw localStorage string (a stable primitive on
+ * unchanged data) so React doesn't loop on a fresh parsed object every call —
+ * see the rule in `.kilocode/rules/memory-bank/context.md`.
+ */
+export function subscribeSavedRun(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(SAVED_RUN_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(SAVED_RUN_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+export function getSavedRunSnapshot(): string | null {
+  return readSavedRunRaw();
+}
+
+export function getSavedRunServerSnapshot(): string | null {
+  return null;
 }

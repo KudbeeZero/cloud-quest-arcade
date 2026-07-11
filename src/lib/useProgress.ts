@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   loadRuns,
   loadBestScore,
   subscribe,
+  loadSavedRun,
+  subscribeSavedRun,
+  getSavedRunSnapshot,
+  getSavedRunServerSnapshot,
   type RunRecord,
+  type SavedRun,
 } from "./progress";
 
 export interface ProgressState {
@@ -31,4 +36,28 @@ export function useProgress(): ProgressState {
   }, []);
 
   return state;
+}
+
+/**
+ * Subscribes to the in-flight (mid-test) saved run. The snapshot is the raw
+ * localStorage string so `getSnapshot` returns a stable primitive on unchanged
+ * data; we parse it in the render body (see the
+ * `useSyncExternalStore` rule in context.md).
+ */
+export function useSavedRun(): SavedRun | null {
+  const raw = useSyncExternalStore(
+    subscribeSavedRun,
+    getSavedRunSnapshot,
+    getSavedRunServerSnapshot,
+  );
+  if (raw === null) return null;
+  try {
+    const parsed = JSON.parse(raw) as SavedRun;
+    if (!parsed || !Array.isArray(parsed.order) || !Array.isArray(parsed.answers)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
 }

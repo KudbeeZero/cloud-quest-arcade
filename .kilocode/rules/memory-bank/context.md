@@ -8,7 +8,9 @@ Fully client-side (no backend/DB). Includes 40-question bank with difficulty tie
 PWA installability (manifest + icons + service worker), study rhythm features on
 `/progress` (daily goals, streaks, exam-readiness checklist), plus multi-page app
 with Flashcards, Missions, Gotchas, Leaderboard, shared SiteNav/SiteFooter, and
-run-history progress store.
+run-history progress store. ArcadeGame now supports **mid-test save/resume**
+(closes-the-tab safe via `arcade_savedRun` localStorage slot) and a **mid-run
+shuffle button** (re-randomizes the remaining upcoming questions).
 
 > **Working Notes for future agents**: Build new features against the *actual*
 > files below. The app is a multi-page arcade trainer with 40 questions (not 72
@@ -55,6 +57,23 @@ run-history progress store.
       loop → React bailed out ("Maximum update depth exceeded") → blank page.
       Now returns raw localStorage string (stable primitive); parsing deferred
       to render. Merged as `cadf6f3`.
+- [x] **Mid-test save/resume**: `src/lib/progress.ts` adds a `SavedRun` slot
+      (`arcade_savedRun` localStorage key) with `loadSavedRun` / `saveRun` /
+      `clearSavedRun` + a `useSyncExternalStore`-friendly raw-string
+      subscription. `src/lib/useProgress.ts` adds a `useSavedRun()` hook.
+      `ArcadeGame` persists the active run (order, current, answers, score,
+      streak, difficulty, questionStartedAt) on every relevant state change
+      while `phase === "playing"`, and shows a "Resume / Discard" card on
+      the start screen when a matching saved run exists. The original
+      `questionStart` is preserved across resumes so the speed bonus doesn't
+      reset on tab close/reopen. `startGame()` and the final branch of
+      `next()` explicitly clear the slot. The persist `useEffect` is
+      deliberately a pure writer (no auto-clear) so the saved run survives
+      remount while waiting for the user to click Resume.
+- [x] **Shuffle button**: small `🔀 Shuffle` button in the playing header
+      reshuffles the tail of the current `order` (everything after the
+      current question), preserving the active question and already-answered
+      ones. Disabled when fewer than 2 questions remain.
 
 ## Current Structure
 
@@ -117,6 +136,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-11 | Homepage diagnostic + fix: removed duplicate `SiteNav` and duplicate discovery block from `page.tsx`; migrated `ArcadeGame` best-score read to `useSyncExternalStore` to clear `react-hooks/set-state-in-effect` lint error. `bun typecheck` / `bun lint` / `bun build` all pass (10/10 static pages). |
 | 2026-07-11 | Merged session branch into `main` with `--no-ff` (merge commit `f4711e4`) and pushed to `origin/main`. Re-verified `bun typecheck` / `bun lint` / `bun build` on `main` post-merge — all pass. Deploy pipeline (OpenNext) will pick up the fix from the new `main` HEAD. |
 | 2026-07-11 | **Root cause of blank deployed homepage** found and fixed: `StreakCounter`'s `useSyncExternalStore` `getSnapshot` returned `getGoal().completedDates` — a fresh array reference every call. `Object.is` comparison in React saw every read as "changed" → infinite render loop → "Maximum update depth exceeded" → tree unmounted → blank page. Fix: `readGoalRaw()` returns the raw localStorage *string* (stable primitive); parsing happens when deriving the streak. Merged into `main` (`cadf6f3`) and pushed. |
+| 2026-07-11 | **Mid-test save/resume + shuffle button** added to `ArcadeGame`. New `SavedRun` store (`arcade_savedRun`) persists order, current question, answers, score, streak, difficulty, and original `questionStart` so speed bonus is preserved across resumes. `useSyncExternalStore` snapshot returns the raw localStorage string (stable primitive) — follows the rule above. Start screen shows a "Resume / Discard" card when a matching saved run exists. "🔀 Shuffle" button in the playing header reshuffles remaining questions. `bun typecheck` / `bun lint` / `bun build` all pass. Changes uncommitted on `session/agent_f5bba937...` awaiting review/commit. |
 
 ## Constraints
 
