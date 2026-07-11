@@ -15,12 +15,12 @@ run-history progress store.
 > yet). PWA + study rhythm features are the most recent additions on top of the
 > shared shell + progress store. **Global navigation lives in the root layout
 > (`SiteNav` in `src/app/layout.tsx`); do not add a second `SiteNav` inside
-> individual pages.** **Persistence pattern for localStorage-backed UI state:**
-> read with `useSyncExternalStore` (server snapshot = safe default), write via
-> a helper that updates storage + dispatches a same-tab custom event, and
-> subscribe to both that event and the native `storage` event. Do not load
-> persisted values inside `useEffect` and call `setState` — the
-> `react-hooks/set-state-in-effect` rule will fail the build.
+> individual pages.** **useSyncExternalStore rule**: `getSnapshot` MUST return
+> a referentially-stable value on unchanged data (primitives, or memoized
+> refs). Returning a fresh object/array from JSON.parse on every call causes
+> an infinite render loop ("Maximum update depth exceeded") and a blank page.
+> For localStorage-backed state, return the raw stored string and parse it
+> when deriving values in the render body.
 
 ## Recently Completed
 
@@ -50,6 +50,11 @@ run-history progress store.
       localStorage read from `useEffect`+`setState` to `useSyncExternalStore`
       with a same-tab custom event — eliminates the
       `react-hooks/set-state-in-effect` lint error and unblocks CI.
+- [x] **Blank-page root cause fix**: `StreakCounter` `useSyncExternalStore`
+      `getSnapshot` returned a fresh array ref on every call → infinite render
+      loop → React bailed out ("Maximum update depth exceeded") → blank page.
+      Now returns raw localStorage string (stable primitive); parsing deferred
+      to render. Merged as `cadf6f3`.
 
 ## Current Structure
 
@@ -111,6 +116,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Consolidated feature branches into `main`; added daily streak counter to home page |
 | 2026-07-11 | Homepage diagnostic + fix: removed duplicate `SiteNav` and duplicate discovery block from `page.tsx`; migrated `ArcadeGame` best-score read to `useSyncExternalStore` to clear `react-hooks/set-state-in-effect` lint error. `bun typecheck` / `bun lint` / `bun build` all pass (10/10 static pages). |
 | 2026-07-11 | Merged session branch into `main` with `--no-ff` (merge commit `f4711e4`) and pushed to `origin/main`. Re-verified `bun typecheck` / `bun lint` / `bun build` on `main` post-merge — all pass. Deploy pipeline (OpenNext) will pick up the fix from the new `main` HEAD. |
+| 2026-07-11 | **Root cause of blank deployed homepage** found and fixed: `StreakCounter`'s `useSyncExternalStore` `getSnapshot` returned `getGoal().completedDates` — a fresh array reference every call. `Object.is` comparison in React saw every read as "changed" → infinite render loop → "Maximum update depth exceeded" → tree unmounted → blank page. Fix: `readGoalRaw()` returns the raw localStorage *string* (stable primitive); parsing happens when deriving the streak. Merged into `main` (`cadf6f3`) and pushed. |
 
 ## Constraints
 
