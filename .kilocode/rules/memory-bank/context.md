@@ -10,7 +10,9 @@ PWA installability (manifest + icons + service worker), study rhythm features on
 with Flashcards, Missions, Gotchas, Leaderboard, shared SiteNav/SiteFooter, and
 run-history progress store. ArcadeGame now supports **mid-test save/resume**
 (closes-the-tab safe via `arcade_savedRun` localStorage slot) and a **mid-run
-shuffle button** (re-randomizes the remaining upcoming questions).
+shuffle button** (re-randomizes the remaining upcoming questions). The `/gotchas`
+page has been expanded to **25 curated CLF-C02 traps** with per-card "reviewed"
+checkboxes that feed the Exam Readiness score on `/progress`.
 
 > **Working Notes for future agents**: Build new features against the *actual*
 > files below. The app is a multi-page arcade trainer with 40 questions (not 72
@@ -74,6 +76,19 @@ shuffle button** (re-randomizes the remaining upcoming questions).
       reshuffles the tail of the current `order` (everything after the
       current question), preserving the active question and already-answered
       ones. Disabled when fewer than 2 questions remain.
+- [x] **Gotchas expansion + readiness sync**: `src/lib/gotchas.ts` is the new
+      source of truth for the 25 CLF-C02 traps (was 10). Each gotcha is
+      tagged with a `topicId` mapped to one of the 12 Exam Readiness topics
+      on `/progress`. The `/gotchas` page is now a client component with
+      per-card "reviewed" checkboxes (localStorage key `cq_gotchas`,
+      same-tab `cq_gotchas` event + `storage` event for cross-tab sync).
+      Snapshot returns the raw localStorage string (stable primitive)
+      per the `useSyncExternalStore` rule. The `/progress` page now:
+      (1) shows a new "Gotchas mastered X/25" `MiniStat`; (2) auto-ticks a
+      topic in the readiness checklist once all of its gotchas are reviewed;
+      (3) shows a per-topic `⚠ n/m` badge on each topic with gotchas;
+      (4) blends topic readiness (50%), gotcha mastery (25%), and a 7-day
+      streak cap (25%) into the Cert Progress percentage.
 
 ## Current Structure
 
@@ -106,6 +121,7 @@ shuffle button** (re-randomizes the remaining upcoming questions).
 | `src/lib/useProgress.ts` | Client hook over progress store | ✅ Ready |
 | `src/lib/domains.ts` | Shared DOMAIN_ORDER / DOMAIN_BADGE | ✅ Ready |
 | `src/lib/study.ts` | Date/streak/goal helpers | ✅ New |
+| `src/lib/gotchas.ts` | 25 CLF-C02 traps + reviewed-progress store | ✅ New |
 | `public/` | PWA manifest, service worker, icons | ✅ New |
 | `scripts/gen-icons.mjs` | PNG icon generator | ✅ New |
 | `src/components/StreakCounter.tsx` | Daily streak display for home page | ✅ New |
@@ -137,6 +153,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-11 | Merged session branch into `main` with `--no-ff` (merge commit `f4711e4`) and pushed to `origin/main`. Re-verified `bun typecheck` / `bun lint` / `bun build` on `main` post-merge — all pass. Deploy pipeline (OpenNext) will pick up the fix from the new `main` HEAD. |
 | 2026-07-11 | **Root cause of blank deployed homepage** found and fixed: `StreakCounter`'s `useSyncExternalStore` `getSnapshot` returned `getGoal().completedDates` — a fresh array reference every call. `Object.is` comparison in React saw every read as "changed" → infinite render loop → "Maximum update depth exceeded" → tree unmounted → blank page. Fix: `readGoalRaw()` returns the raw localStorage *string* (stable primitive); parsing happens when deriving the streak. Merged into `main` (`cadf6f3`) and pushed. |
 | 2026-07-11 | **Mid-test save/resume + shuffle button** added to `ArcadeGame`. New `SavedRun` store (`arcade_savedRun`) persists order, current question, answers, score, streak, difficulty, and original `questionStart` so speed bonus is preserved across resumes. `useSyncExternalStore` snapshot returns the raw localStorage string (stable primitive) — follows the rule above. Start screen shows a "Resume / Discard" card when a matching saved run exists. "🔀 Shuffle" button in the playing header reshuffles remaining questions. `bun typecheck` / `bun lint` / `bun build` all pass. Changes uncommitted on `session/agent_f5bba937...` awaiting review/commit. |
+| 2026-07-11 | **Gotchas expansion + readiness sync**: `/gotchas` expanded from 10 → 25 curated CLF-C02 traps, each tagged with a `topicId` mapped to the 12 readiness topics. New `src/lib/gotchas.ts` is the source of truth (g1-g10 preserved verbatim + g11-g25 added). `/gotchas` is now a client component with per-card "reviewed" checkboxes (`cq_gotchas` localStorage, `useSyncExternalStore` returns raw string per the rule). `/progress` adds a "Gotchas mastered X/25" `MiniStat`, per-topic `⚠ n/m` badges, auto-tick of any topic whose gotchas are fully reviewed, and rebalanced Cert Progress (50% topic readiness / 25% gotcha mastery / 25% 7-day streak cap). `bun typecheck` / `bun lint` / `bun x next build` all pass (10/10 static pages). |
 
 ## Constraints
 

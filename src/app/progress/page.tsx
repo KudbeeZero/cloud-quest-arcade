@@ -5,7 +5,7 @@
 // "Loading…" guard keeps the server and first client render identical, so the
 // post-mount setState is intentional hydration, not a derived-state anti-pattern.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   computeLongestStreak,
@@ -15,10 +15,20 @@ import {
   type DailyGoal,
   type DailyGoalType,
 } from "@/lib/study";
+import {
+  GOTCHAS,
+  countReviewed,
+  getGotchasServerSnapshot,
+  getGotchasSnapshot,
+  loadGotchaProgress,
+  reviewedPct,
+  subscribeGotchas,
+  type GotchaTopicId,
+} from "@/lib/gotchas";
 
 const GOAL_TYPES: DailyGoalType[] = ["run", "flashcards", "study"];
 
-const READINESS_TOPICS: { id: string; label: string; hint: string }[] = [
+const READINESS_TOPICS: { id: GotchaTopicId; label: string; hint: string }[] = [
   { id: "shared", label: "Shared Responsibility Model", hint: "What AWS vs. you secure" },
   { id: "regions", label: "Regions vs. AZs vs. Edge", hint: "Global infrastructure" },
   { id: "wellarch", label: "Well-Architected Pillars", hint: "6 pillars overview" },
@@ -61,14 +71,24 @@ export default function ProgressPage() {
   });
   const [readiness, setReadiness] = useState<Record<string, boolean>>({});
   const [hydrationDone, setHydrationDone] = useState(false);
+  // `getSnapshot` returns the raw localStorage STRING (a stable primitive) so
+  // React's Object.is comparison doesn't fire on every render — see the
+  // `useSyncExternalStore` rule in context.md. Parsing happens in render.
+  const gotchasRaw = useSyncExternalStore(
+    subscribeGotchas,
+    getGotchasSnapshot,
+    getGotchasServerSnapshot,
+  );
+  const [gotchas, setGotchas] = useState<Record<string, boolean>>({});
 
   // Hydrate from localStorage after mount (avoids SSR mismatch).
   // The "Loading…" guard keeps server and first client render identical.
   useEffect(() => {
     setGoal(loadJSON<DailyGoal>(GOAL_KEY, { type: "run", completedDates: [] }));
     setReadiness(loadJSON<Record<string, boolean>>(READINESS_KEY, {}));
+    setGotchas(loadGotchaProgress());
     setHydrationDone(true);
-  }, []);
+  }, [gotchasRaw]);
 
   function setGoalType(type: DailyGoalType) {
     const updated = { ...goal, type };
@@ -106,13 +126,38 @@ export default function ProgressPage() {
   const streak = computeStreak(goal.completedDates, today);
   const bestStreak = computeLongestStreak(goal.completedDates);
 
-  const readyCount = READINESS_TOPICS.filter((t) => readiness[t.id]).length;
+  // --- Gotcha mastery + per-topic mastery counts ----------------------------
+  const reviewedGotchaCount = countReviewed(gotchas);
+  const gotchasPct = reviewedPct(gotchas);
+  const gotchasByTopic = useMemo(() => {
+    const map: Record<string, { total: number; reviewed: number }> = {};
+    for (const g of GOTCHAS) {
+      const slot = (map[g.topicId] ??= { total: 0, reviewed: 0 });
+      slot.total += 1;
+      if (gotchas[g.id]) slot.reviewed += 1;
+    }
+    return map;
+  }, [gotchas]);
+
+  // A topic counts as ready if the user has ticked it OR every gotcha tagged
+  // for that topic has been reviewed. This is how the gotchas page feeds into
+  // the Exam Readiness score.
+  const readyCount = READINESS_TOPICS.filter((t) => {
+    if (readiness[t.id]) return true;
+    const slot = gotchasByTopic[t.id];
+    return !!slot && slot.total > 0 && slot.reviewed === slot.total;
+  }).length;
   const readinessPct = Math.round(
     (readyCount / READINESS_TOPICS.length) * 100,
   );
 
-  // Overall cert progress blends topic readiness with study consistency.
-  const certPct = Math.round((readinessPct * 0.7 + Math.min(streak, 7) * 10 * 0.3) / 1);
+  // Overall cert progress blends topic readiness, gotcha mastery, and study
+  // consistency. 50% topic readiness / 25% gotcha mastery / 25% streak cap.
+  const certPct = Math.round(
+    readinessPct * 0.5 +
+      gotchasPct * 0.25 +
+      Math.min(streak, 7) * (100 / 7) * 0.25,
+  );
 
   if (!hydrationDone) {
     return (
@@ -135,17 +180,22 @@ export default function ProgressPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-4">
         <MiniStat label="Daily streak" value={`${streak}🔥`} />
         <MiniStat label="Best streak" value={`${bestStreak}🔥`} />
+        <MiniStat label="Gotchas mastered" value={`${reviewedGotchaCount}/${GOTCHAS.length}`} />
         <MiniStat label="Exam readiness" value={`${readinessPct}%`} />
       </section>
 
       <Card title="Cert Progress" accent="fuchsia">
         <ProgressBar value={certPct} sublabel={`${certPct}% to exam-ready`} />
         <p className="mt-3 text-xs text-neutral-400">
-          Blends your topic coverage ({readinessPct}%) with study consistency
-          (7-day streak = full credit).
+          Blends topic coverage ({readinessPct}%), gotcha mastery (
+          {gotchasPct}%), and a 7-day streak cap. Reviewing gotchas on{" "}
+          <Link href="/gotchas" className="text-cyan-300 underline-offset-2 hover:underline">
+            /gotchas
+          </Link>{" "}
+          auto-ticks any topic whose gotchas you&apos;ve fully reviewed.
         </p>
       </Card>
 
@@ -213,7 +263,10 @@ export default function ProgressPage() {
         <ProgressBar value={readinessPct} sublabel={`${readyCount}/${READINESS_TOPICS.length}`} />
         <ul className="mt-4 space-y-2">
           {READINESS_TOPICS.map((t) => {
-            const checked = !!readiness[t.id];
+            const manual = !!readiness[t.id];
+            const slot = gotchasByTopic[t.id] ?? { total: 0, reviewed: 0 };
+            const gotchasCover = slot.total > 0 && slot.reviewed === slot.total;
+            const checked = manual || gotchasCover;
             return (
               <li key={t.id}>
                 <button
@@ -246,6 +299,18 @@ export default function ProgressPage() {
                     </span>
                     <span className="block text-xs text-neutral-400">{t.hint}</span>
                   </span>
+                  {slot.total > 0 && (
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        gotchasCover
+                          ? "bg-cyan-400/20 text-cyan-100"
+                          : "bg-neutral-700/60 text-neutral-300"
+                      }`}
+                      title={`${slot.reviewed} of ${slot.total} gotchas reviewed for this topic`}
+                    >
+                      ⚠ {slot.reviewed}/{slot.total}
+                    </span>
+                  )}
                 </button>
               </li>
             );
