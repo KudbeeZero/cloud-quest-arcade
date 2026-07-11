@@ -12,7 +12,10 @@ run-history progress store. ArcadeGame now supports **mid-test save/resume**
 (closes-the-tab safe via `arcade_savedRun` localStorage slot) and a **mid-run
 shuffle button** (re-randomizes the remaining upcoming questions). The `/gotchas`
 page has been expanded to **25 curated CLF-C02 traps** with per-card "reviewed"
-checkboxes that feed the Exam Readiness score on `/progress`.
+checkboxes that feed the Exam Readiness score on `/progress`. The `/progress`
+dashboard now opens with a **Quick Stats hero** (readiness %, current streak,
+runs today) and `/gotchas` has a polished **DeepSeek Generate** button with full
+idle/loading/success/error state coverage.
 
 > **Working Notes for future agents**: Build new features against the *actual*
 > files below. The app is a multi-page arcade trainer with 40 questions (not 72
@@ -89,6 +92,30 @@ checkboxes that feed the Exam Readiness score on `/progress`.
       (3) shows a per-topic `⚠ n/m` badge on each topic with gotchas;
       (4) blends topic readiness (50%), gotcha mastery (25%), and a 7-day
       streak cap (25%) into the Cert Progress percentage.
+- [x] **Dashboard Quick Stats hero**: `/progress` opens with a 3-up
+      `QuickStats` card (readiness %, current streak 🔥, runs today) with
+      tone-coded rings (cyan / amber / violet) and contextual hints
+      ("Exam-ready territory", "On fire", "1 logged", …). New
+      `runsToday(today, runs?)` helper in `src/lib/progress.ts` counts
+      runs whose `timestamp` falls on the given local date. The detailed
+      4-up `MiniStat` strip below the hero is preserved for the secondary
+      numbers (best streak, gotchas mastered, …).
+- [x] **DeepSeek "Generate Gotchas" button polish**: new
+      `src/lib/deepseek.ts` exposes a `generateGotchas()` async function
+      (client-side mock with 1.2–2.4s simulated latency + 8% network-error
+      rate) and a separate `cq_gotchas_ai` localStorage slot for the
+      generated items. `/gotchas` renders a new `GenerateButton` component
+      with four explicit visual states:
+        • `idle`    — gradient "✨ Generate" (or "Generate more" once any
+                      AI items exist)
+        • `loading` — disabled button with a CSS spinner + "Generating…"
+        • `success` — emerald "✓ Generated N new gotchas!" badge for 4s,
+                      then auto-dismisses
+        • `error`   — rose-tinted "↻ Retry" button + a separate alert line
+                      ("DeepSeek request failed (network). Try again.")
+      AI items render in a violet "✨ AI-Generated (N)" section with the
+      same review-toggle UX as the curated 25. A "Clear all" button purges
+      AI items and prunes any reviews attached to them.
 
 ## Current Structure
 
@@ -122,6 +149,7 @@ checkboxes that feed the Exam Readiness score on `/progress`.
 | `src/lib/domains.ts` | Shared DOMAIN_ORDER / DOMAIN_BADGE | ✅ Ready |
 | `src/lib/study.ts` | Date/streak/goal helpers | ✅ New |
 | `src/lib/gotchas.ts` | 25 CLF-C02 traps + reviewed-progress store | ✅ New |
+| `src/lib/deepseek.ts` | AI gotcha generator (mock) + AI-store | ✅ New |
 | `public/` | PWA manifest, service worker, icons | ✅ New |
 | `scripts/gen-icons.mjs` | PNG icon generator | ✅ New |
 | `src/components/StreakCounter.tsx` | Daily streak display for home page | ✅ New |
@@ -154,6 +182,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-11 | **Root cause of blank deployed homepage** found and fixed: `StreakCounter`'s `useSyncExternalStore` `getSnapshot` returned `getGoal().completedDates` — a fresh array reference every call. `Object.is` comparison in React saw every read as "changed" → infinite render loop → "Maximum update depth exceeded" → tree unmounted → blank page. Fix: `readGoalRaw()` returns the raw localStorage *string* (stable primitive); parsing happens when deriving the streak. Merged into `main` (`cadf6f3`) and pushed. |
 | 2026-07-11 | **Mid-test save/resume + shuffle button** added to `ArcadeGame`. New `SavedRun` store (`arcade_savedRun`) persists order, current question, answers, score, streak, difficulty, and original `questionStart` so speed bonus is preserved across resumes. `useSyncExternalStore` snapshot returns the raw localStorage string (stable primitive) — follows the rule above. Start screen shows a "Resume / Discard" card when a matching saved run exists. "🔀 Shuffle" button in the playing header reshuffles remaining questions. `bun typecheck` / `bun lint` / `bun build` all pass. Changes uncommitted on `session/agent_f5bba937...` awaiting review/commit. |
 | 2026-07-11 | **Gotchas expansion + readiness sync**: `/gotchas` expanded from 10 → 25 curated CLF-C02 traps, each tagged with a `topicId` mapped to the 12 readiness topics. New `src/lib/gotchas.ts` is the source of truth (g1-g10 preserved verbatim + g11-g25 added). `/gotchas` is now a client component with per-card "reviewed" checkboxes (`cq_gotchas` localStorage, `useSyncExternalStore` returns raw string per the rule). `/progress` adds a "Gotchas mastered X/25" `MiniStat`, per-topic `⚠ n/m` badges, auto-tick of any topic whose gotchas are fully reviewed, and rebalanced Cert Progress (50% topic readiness / 25% gotcha mastery / 25% 7-day streak cap). `bun typecheck` / `bun lint` / `bun x next build` all pass (10/10 static pages). |
+| 2026-07-11 | **Dashboard Quick Stats + DeepSeek button polish**: `/progress` opens with a 3-up `QuickStats` hero (readiness %, current streak 🔥, runs today) with tone-coded rings and contextual hints; new `runsToday(today, runs?)` helper in `src/lib/progress.ts`. New `src/lib/deepseek.ts` provides a mock `generateGotchas()` (1.2–2.4s simulated latency, 8% network-error rate) and a separate `cq_gotchas_ai` localStorage slot. `/gotchas` renders a `GenerateButton` with four explicit states (idle / loading-with-CSS-spinner / success-emerald-badge-for-4s / error-rose-with-alert-line). AI items render in a violet "✨ AI-Generated" section with the same review-toggle UX. `bun typecheck` / `bun lint` / `bun x next build` all pass (10/10 static pages). |
 
 ## Constraints
 

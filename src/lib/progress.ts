@@ -133,6 +133,24 @@ export function clearRuns(): void {
   notify();
 }
 
+/**
+ * Count how many recorded runs happened on the given local date key
+ * (YYYY-MM-DD). Defaults to today. Uses the existing `todayKey` helper
+ * from `src/lib/study.ts` so the two stay in sync.
+ */
+export function runsToday(today: string, runs?: RunRecord[]): number {
+  const list = runs ?? loadRuns();
+  let n = 0;
+  for (const r of list) {
+    const d = new Date(r.timestamp);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    if (`${y}-${m}-${day}` === today) n += 1;
+  }
+  return n;
+}
+
 export interface DomainAccuracy {
   domain: Domain;
   correct: number;

@@ -25,6 +25,8 @@ import {
   subscribeGotchas,
   type GotchaTopicId,
 } from "@/lib/gotchas";
+import { useProgress } from "@/lib/useProgress";
+import { runsToday } from "@/lib/progress";
 
 const GOAL_TYPES: DailyGoalType[] = ["run", "flashcards", "study"];
 
@@ -159,6 +161,13 @@ export default function ProgressPage() {
       Math.min(streak, 7) * (100 / 7) * 0.25,
   );
 
+  // --- Quick Stats: runs today (from the run-history store) ------------------
+  const { runs, loaded: runsLoaded } = useProgress();
+  const todaysRuns = useMemo(
+    () => (runsLoaded ? runsToday(today, runs) : 0),
+    [runsLoaded, runs, today],
+  );
+
   if (!hydrationDone) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-8">
@@ -180,7 +189,13 @@ export default function ProgressPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-4">
+      <QuickStats
+        readinessPct={readinessPct}
+        streak={streak}
+        runsToday={todaysRuns}
+      />
+
+      <section className="mt-4 grid gap-4 sm:grid-cols-4">
         <MiniStat label="Daily streak" value={`${streak}🔥`} />
         <MiniStat label="Best streak" value={`${bestStreak}🔥`} />
         <MiniStat label="Gotchas mastered" value={`${reviewedGotchaCount}/${GOTCHAS.length}`} />
@@ -383,6 +398,91 @@ function ProgressBar({ value, sublabel }: { value: number; sublabel?: string }) 
           style={{ width: `${pct}%` }}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Three-up quick-stats hero: readiness, streak, runs today. The big-number
+ * treatment makes the dashboard scannable at a glance — the detailed stat
+ * strip below it still has the secondary numbers for those who want them.
+ */
+function QuickStats({
+  readinessPct,
+  streak,
+  runsToday,
+}: {
+  readinessPct: number;
+  streak: number;
+  runsToday: number;
+}) {
+  return (
+    <section
+      aria-label="Quick stats"
+      className="grid grid-cols-3 gap-2 sm:gap-3"
+    >
+      <QuickStat
+        label="Readiness"
+        value={`${readinessPct}%`}
+        tone="cyan"
+        hint={
+          readinessPct >= 75
+            ? "Exam-ready territory"
+            : readinessPct >= 40
+              ? "Getting there"
+              : "Keep building"
+        }
+      />
+      <QuickStat
+        label="Streak"
+        value={`${streak}🔥`}
+        tone="amber"
+        hint={streak === 0 ? "Start one today" : streak >= 7 ? "On fire" : "Keep it alive"}
+      />
+      <QuickStat
+        label="Runs today"
+        value={String(runsToday)}
+        tone="violet"
+        hint={runsToday === 0 ? "None yet" : runsToday === 1 ? "1 logged" : `${runsToday} logged`}
+      />
+    </section>
+  );
+}
+
+function QuickStat({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone: "cyan" | "amber" | "violet";
+}) {
+  const ring =
+    tone === "cyan"
+      ? "border-cyan-300/30 from-cyan-400/10"
+      : tone === "amber"
+        ? "border-amber-300/30 from-amber-400/10"
+        : "border-violet-300/30 from-violet-400/10";
+  const valueColor =
+    tone === "cyan"
+      ? "text-cyan-200"
+      : tone === "amber"
+        ? "text-amber-200"
+        : "text-violet-200";
+  return (
+    <div
+      className={`rounded-2xl border bg-gradient-to-br ${ring} to-transparent p-3 text-center sm:p-4`}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 sm:text-xs">
+        {label}
+      </p>
+      <p className={`mt-1 text-2xl font-black sm:text-3xl ${valueColor}`}>
+        {value}
+      </p>
+      <p className="mt-0.5 text-[10px] text-neutral-400 sm:text-xs">{hint}</p>
     </div>
   );
 }
