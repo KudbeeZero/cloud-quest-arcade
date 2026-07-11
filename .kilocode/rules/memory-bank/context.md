@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Status**: ✅ Full-featured exam trainer with PWA support.
+**Status**: ✅ Full-featured exam trainer with PWA support. Deployed and verified.
 
 Fully client-side (no backend/DB). Includes 40-question bank with difficulty tiers,
 PWA installability (manifest + icons + service worker), study rhythm features on
@@ -13,7 +13,14 @@ run-history progress store.
 > **Working Notes for future agents**: Build new features against the *actual*
 > files below. The app is a multi-page arcade trainer with 40 questions (not 72
 > yet). PWA + study rhythm features are the most recent additions on top of the
-> shared shell + progress store.
+> shared shell + progress store. **Global navigation lives in the root layout
+> (`SiteNav` in `src/app/layout.tsx`); do not add a second `SiteNav` inside
+> individual pages.** **Persistence pattern for localStorage-backed UI state:**
+> read with `useSyncExternalStore` (server snapshot = safe default), write via
+> a helper that updates storage + dispatches a same-tab custom event, and
+> subscribe to both that event and the native `storage` event. Do not load
+> persisted values inside `useEffect` and call `setState` — the
+> `react-hooks/set-state-in-effect` rule will fail the build.
 
 ## Recently Completed
 
@@ -37,6 +44,12 @@ run-history progress store.
 - [x] **Run-history progress store**: `src/lib/progress.ts`, `useProgress.ts`, `domains.ts`
 - [x] **Daily streak counter** on home page (`StreakCounter` component)
 - [x] **Branch consolidation**: Merged agent_226025b8 and agent_d13a52a6 into `main`
+- [x] **Homepage diagnostic + fix**: removed duplicate `<SiteNav />` and duplicate
+      "Explore the arcade" discovery block from `src/app/page.tsx` (the layout
+      already owns global nav). Converted `ArcadeGame`'s `arcade_bestScore`
+      localStorage read from `useEffect`+`setState` to `useSyncExternalStore`
+      with a same-tab custom event — eliminates the
+      `react-hooks/set-state-in-effect` lint error and unblocks CI.
 
 ## Current Structure
 
@@ -96,6 +109,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | Added Flashcards, Missions, Gotchas, Progress, Leaderboard pages; shared SiteNav/ContentShell/Prose shell; run-history progress store wired into ArcadeGame |
 | 2026-07-10 | PWA installability (icons/manifest/SW) + `/progress` study rhythm features (daily goals, streaks, readiness checklist) + SiteFooter + study helpers |
 | 2026-07-10 | Consolidated feature branches into `main`; added daily streak counter to home page |
+| 2026-07-11 | Homepage diagnostic + fix: removed duplicate `SiteNav` and duplicate discovery block from `page.tsx`; migrated `ArcadeGame` best-score read to `useSyncExternalStore` to clear `react-hooks/set-state-in-effect` lint error. `bun typecheck` / `bun lint` / `bun build` all pass (10/10 static pages). |
 
 ## Constraints
 
