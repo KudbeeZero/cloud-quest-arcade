@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import questions from "@/data/questions";
 import type { AnswerOption, AnsweredQuestion, Domain, Difficulty } from "@/lib/types";
 import {
@@ -55,6 +55,45 @@ function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
+// --- Persisted best-score store (localStorage) ---------------------------------
+// Read via useSyncExternalStore so SSR markup matches the client's first render
+// (server snapshot = 0), and writes are observed across tabs and within the same
+// tab via a custom event.
+const BEST_SCORE_KEY = "arcade_bestScore";
+const BEST_SCORE_EVENT = "cq_bestScore";
+
+function readBestScore(): number {
+  try {
+    const saved = localStorage.getItem(BEST_SCORE_KEY);
+    if (saved === null) return 0;
+    const parsed = parseInt(saved, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  } catch {
+    return 0;
+  }
+}
+
+function writeBestScore(next: number) {
+  try {
+    localStorage.setItem(BEST_SCORE_KEY, String(next));
+  } catch {
+    // ignore quota / disabled storage
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(BEST_SCORE_EVENT));
+  }
+}
+
+function subscribeBestScore(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(BEST_SCORE_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(BEST_SCORE_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
 /** Linear progress bar used for XP and mission progress. */
 function ProgressBar({
   value,
@@ -99,7 +138,16 @@ export default function ArcadeGame() {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [questionStart, setQuestionStart] = useState(0);
-  const [bestScore, setBestScore] = useState(0);
+  // bestScore is read from localStorage via useSyncExternalStore; the SSR
+  // snapshot is 0 to avoid hydration mismatches, and the client picks up the
+  // persisted value after hydration. setBestScore is a thin alias over the
+  // localStorage writer (which also dispatches the same-tab event).
+  const bestScore = useSyncExternalStore(
+    subscribeBestScore,
+    readBestScore,
+    () => 0,
+  );
+  const setBestScore = (next: number) => writeBestScore(next);
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>("all");
 
@@ -129,28 +177,6 @@ export default function ArcadeGame() {
       filteredQuestions.filter((q) => ids.has(q.id)).map((q) => q.domain),
     );
   }, [answers, filteredQuestions]);
-
-  // Load persisted best score after mount so SSR and client markup match.
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time client load from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("arcade_bestScore");
-      if (saved !== null) {
-        const parsed = parseInt(saved, 10);
-        if (!Number.isNaN(parsed)) setBestScore(parsed);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("arcade_bestScore", String(bestScore));
-    } catch {
-      // ignore
-    }
-  }, [bestScore]);
 
   function startGame() {
     setOrder(shuffle(filteredQuestions.map((_, i) => i)));
@@ -192,7 +218,7 @@ export default function ArcadeGame() {
         filteredQuestions,
       );
       recordRun(finalResult, difficultyFilter, filteredQuestions);
-      setBestScore((b) => Math.max(b, score));
+      setBestScore(Math.max(readBestScore(), score));
       try {
         localStorage.setItem("arcade_lastRunDate", new Date().toISOString().slice(0, 10));
       } catch {
