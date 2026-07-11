@@ -110,6 +110,7 @@ PWA + rhythm features + multi-page shell shipped. Possible next steps:
 | 2026-07-10 | PWA installability (icons/manifest/SW) + `/progress` study rhythm features (daily goals, streaks, readiness checklist) + SiteFooter + study helpers |
 | 2026-07-10 | Consolidated feature branches into `main`; added daily streak counter to home page |
 | 2026-07-11 | Homepage diagnostic + fix: removed duplicate `SiteNav` and duplicate discovery block from `page.tsx`; migrated `ArcadeGame` best-score read to `useSyncExternalStore` to clear `react-hooks/set-state-in-effect` lint error. `bun typecheck` / `bun lint` / `bun build` all pass (10/10 static pages). |
+| 2026-07-11 | Merged session branch into `main` with `--no-ff` (merge commit `f4711e4`) and pushed to `origin/main`. Re-verified `bun typecheck` / `bun lint` / `bun build` on `main` post-merge — all pass. Deploy pipeline (OpenNext) will pick up the fix from the new `main` HEAD. |
 
 ## Constraints
 
